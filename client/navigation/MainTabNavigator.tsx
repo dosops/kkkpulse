@@ -10,14 +10,17 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AlertsStackNavigator from "@/navigation/AlertsStackNavigator";
 import IncidentsStackNavigator from "@/navigation/IncidentsStackNavigator";
 import ActivityScreen from "@/screens/ActivityScreen";
+import StatusScreen from "@/screens/StatusScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Colors } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useI18n } from "@/lib/i18n";
 
 export type MainTabParamList = {
   AlertsTab: undefined;
   IncidentsTab: undefined;
+  StatusTab: undefined;
   ActivityTab: undefined;
   ProfileTab: undefined;
 };
@@ -49,6 +52,7 @@ function FAB() {
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
 
   return (
     <View style={styles.container}>
@@ -81,7 +85,7 @@ export default function MainTabNavigator() {
           name="AlertsTab"
           component={AlertsStackNavigator}
           options={{
-            title: "Alerts",
+            title: t.tabs.alerts,
             tabBarIcon: ({ color, size }) => (
               <Feather name="bell" size={size} color={color} />
             ),
@@ -91,9 +95,23 @@ export default function MainTabNavigator() {
           name="IncidentsTab"
           component={IncidentsStackNavigator}
           options={{
-            title: "Incidents",
+            title: t.tabs.incidents,
             tabBarIcon: ({ color, size }) => (
               <Feather name="file-text" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="StatusTab"
+          component={StatusScreen}
+          options={{
+            title: t.tabs.status,
+            headerShown: true,
+            headerTitle: t.status.title,
+            headerTintColor: theme.text,
+            headerStyle: { backgroundColor: theme.backgroundRoot },
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="bar-chart-2" size={size} color={color} />
             ),
           }}
         />
@@ -101,9 +119,9 @@ export default function MainTabNavigator() {
           name="ActivityTab"
           component={ActivityScreen}
           options={{
-            title: "Activity",
+            title: t.tabs.activity,
             headerShown: true,
-            headerTitle: "Activity",
+            headerTitle: t.activity.title,
             headerTintColor: theme.text,
             headerStyle: { backgroundColor: theme.backgroundRoot },
             tabBarIcon: ({ color, size }) => (
@@ -115,9 +133,9 @@ export default function MainTabNavigator() {
           name="ProfileTab"
           component={ProfileScreen}
           options={{
-            title: "Profile",
+            title: t.tabs.profile,
             headerShown: true,
-            headerTitle: "Profile",
+            headerTitle: t.profile.title,
             headerTintColor: theme.text,
             headerStyle: { backgroundColor: theme.backgroundRoot },
             tabBarIcon: ({ color, size }) => (

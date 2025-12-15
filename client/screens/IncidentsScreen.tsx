@@ -19,9 +19,11 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store, Incident } from "@/lib/store";
 import { IncidentsStackParamList } from "@/navigation/IncidentsStackNavigator";
+import { useI18n } from "@/lib/i18n";
 
 export default function IncidentsScreen() {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<IncidentsStackParamList>>();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -58,7 +60,7 @@ export default function IncidentsScreen() {
           <Feather name="search" size={18} color={theme.textSecondary} />
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder="Search incidents..."
+            placeholder={t.incidents.searchPlaceholder}
             placeholderTextColor={theme.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -92,7 +94,7 @@ export default function IncidentsScreen() {
           <View style={styles.emptyContainer}>
             <Feather name="file-text" size={48} color={theme.textSecondary} />
             <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
-              No incidents found
+              {t.incidents.noIncidents}
             </ThemedText>
           </View>
         }

@@ -14,6 +14,7 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store, ActivityItem } from "@/lib/store";
 import { formatRelativeTime, formatDate, isSameDay } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface Section {
   title: string;
@@ -37,25 +38,28 @@ function getActivityIcon(type: ActivityItem['type']) {
   }
 }
 
-function getActivityLabel(type: ActivityItem['type']) {
+function getActivityLabel(type: ActivityItem['type'], t: any) {
   switch (type) {
     case 'alert_created':
-      return 'created alert';
+      return t.activity.types.alertCreated;
     case 'alert_taken':
-      return 'took alert to work';
+      return t.activity.types.alertTaken;
     case 'alert_inspected':
-      return 'inspected alert';
+      return t.activity.types.alertInspected;
     case 'incident_registered':
-      return 'registered incident';
+      return t.activity.types.incidentRegistered;
     case 'incident_updated':
-      return 'updated incident';
+      return t.activity.types.incidentUpdated;
+    case 'incident_closed':
+      return t.activity.types.incidentClosed;
     default:
-      return 'performed action';
+      return '';
   }
 }
 
 export default function ActivityScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -106,7 +110,7 @@ export default function ActivityScreen() {
                 <ThemedText type="body" style={{ fontWeight: '600' }}>
                   {item.userName}
                 </ThemedText>
-                {' '}{getActivityLabel(item.type)}
+                {' '}{getActivityLabel(item.type, t)}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
                 {item.targetTitle}
@@ -130,7 +134,7 @@ export default function ActivityScreen() {
           <View style={styles.emptyContainer}>
             <Feather name="activity" size={48} color={theme.textSecondary} />
             <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
-              No activity yet
+              {t.activity.noActivity}
             </ThemedText>
           </View>
         }

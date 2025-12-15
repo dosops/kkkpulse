@@ -14,6 +14,7 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { Alert } from "@/lib/store";
 import { formatRelativeTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface AlertCardProps {
   alert: Alert;
@@ -22,7 +23,7 @@ interface AlertCardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function AlertStatusIndicator({ alert, colors }: { alert: Alert; colors: typeof Colors.light; theme: any }) {
+function AlertStatusIndicator({ alert, colors, t }: { alert: Alert; colors: typeof Colors.light; theme: any; t: any }) {
   const actions = alert.actions || [];
   const incidentAction = actions.find(a => a.type === 'incident_registered');
   const takenAction = actions.find(a => a.type === 'taken_to_work');
@@ -32,7 +33,7 @@ function AlertStatusIndicator({ alert, colors }: { alert: Alert; colors: typeof 
       <View style={[styles.statusRow, { backgroundColor: colors.success + '20' }]}>
         <Feather name="check-circle" size={14} color={colors.success} />
         <ThemedText type="caption" style={{ color: colors.success }}>
-          Incident registered by {incidentAction.userName}
+          {t.alerts.status.incidentRegisteredBy} {incidentAction.userName}
         </ThemedText>
       </View>
     );
@@ -43,7 +44,7 @@ function AlertStatusIndicator({ alert, colors }: { alert: Alert; colors: typeof 
       <View style={[styles.statusRow, { backgroundColor: colors.primary + '20' }]}>
         <Feather name="user" size={14} color={colors.primary} />
         <ThemedText type="caption" style={{ color: colors.primary }}>
-          In progress: {takenAction.userName}
+          {t.alerts.status.inProgressBy} {takenAction.userName}
         </ThemedText>
       </View>
     );
@@ -53,7 +54,7 @@ function AlertStatusIndicator({ alert, colors }: { alert: Alert; colors: typeof 
     <View style={[styles.statusRow, { backgroundColor: colors.severityHigh + '20' }]}>
       <Feather name="alert-circle" size={14} color={colors.severityHigh} />
       <ThemedText type="caption" style={{ color: colors.severityHigh }}>
-        New - not reviewed
+        {t.alerts.status.newNotReviewed}
       </ThemedText>
     </View>
   );
@@ -61,6 +62,7 @@ function AlertStatusIndicator({ alert, colors }: { alert: Alert; colors: typeof 
 
 export function AlertCard({ alert, onPress }: AlertCardProps) {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
   const scale = useSharedValue(1);
   const colors = isDark ? Colors.dark : Colors.light;
 
@@ -101,11 +103,11 @@ export function AlertCard({ alert, onPress }: AlertCardProps) {
             </ThemedText>
             <View style={[styles.sourceBadge, { backgroundColor: theme.backgroundSecondary }]}>
               <ThemedText type="caption">
-                {alert.source === 'manual' ? 'Manual' : 'System'}
+                {alert.source === 'manual' ? t.alerts.source.manual : t.alerts.source.system}
               </ThemedText>
             </View>
           </View>
-          <AlertStatusIndicator alert={alert} colors={colors} theme={theme} />
+          <AlertStatusIndicator alert={alert} colors={colors} theme={theme} t={t} />
         </View>
         {alert.imageUri ? (
           <Image

@@ -18,9 +18,11 @@ import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 
 export default function ProfileScreen() {
   const { theme, isDark } = useTheme();
+  const { language, setLanguage, t } = useI18n();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
@@ -30,28 +32,28 @@ export default function ProfileScreen() {
   const colors = isDark ? Colors.dark : Colors.light;
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: () => {} },
+    Alert.alert(t.profile.logOut, t.profile.logOutConfirm, [
+      { text: t.common.cancel, style: 'cancel' },
+      { text: t.profile.logOut, style: 'destructive', onPress: () => {} },
     ]);
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
+      t.profile.deleteAccount,
+      t.profile.deleteAccountConfirm,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Delete',
+          text: t.common.delete,
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Confirm Deletion',
-              'This will permanently delete all your data.',
+              t.profile.confirmDeletion,
+              t.profile.permanentDelete,
               [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete Forever', style: 'destructive', onPress: () => {} },
+                { text: t.common.cancel, style: 'cancel' },
+                { text: t.profile.deleteForever, style: 'destructive', onPress: () => {} },
               ]
             );
           },
@@ -85,12 +87,46 @@ export default function ProfileScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="h4" style={styles.sectionTitle}>
-            Preferences
+            {t.profile.settings}
           </ThemedText>
           <View style={styles.settingRow}>
             <View style={styles.settingLabel}>
+              <Feather name="globe" size={20} color={theme.text} />
+              <ThemedText type="body">{t.profile.language}</ThemedText>
+            </View>
+            <View style={styles.languageToggle}>
+              <Pressable
+                onPress={() => setLanguage('en')}
+                style={[
+                  styles.langButton,
+                  {
+                    backgroundColor: language === 'en' ? colors.primary : theme.backgroundSecondary,
+                  },
+                ]}
+              >
+                <ThemedText type="small" style={{ color: language === 'en' ? '#FFFFFF' : theme.text }}>
+                  EN
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => setLanguage('ru')}
+                style={[
+                  styles.langButton,
+                  {
+                    backgroundColor: language === 'ru' ? colors.primary : theme.backgroundSecondary,
+                  },
+                ]}
+              >
+                <ThemedText type="small" style={{ color: language === 'ru' ? '#FFFFFF' : theme.text }}>
+                  RU
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLabel}>
               <Feather name="bell" size={20} color={theme.text} />
-              <ThemedText type="body">Push Notifications</ThemedText>
+              <ThemedText type="body">{t.profile.pushNotifications}</ThemedText>
             </View>
             <Switch
               value={notificationsEnabled}
@@ -102,10 +138,10 @@ export default function ProfileScreen() {
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="h4" style={styles.sectionTitle}>
-            App Info
+            {t.profile.appInfo}
           </ThemedText>
           <View style={styles.infoRow}>
-            <ThemedText type="body">Version</ThemedText>
+            <ThemedText type="body">{t.profile.version}</ThemedText>
             <ThemedText type="small" style={{ color: theme.textSecondary }}>
               {Constants.expoConfig?.version ?? '1.0.0'}
             </ThemedText>
@@ -116,7 +152,7 @@ export default function ProfileScreen() {
               { opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <ThemedText type="body">Help & Support</ThemedText>
+            <ThemedText type="body">{t.profile.helpSupport}</ThemedText>
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </Pressable>
           <Pressable
@@ -125,14 +161,14 @@ export default function ProfileScreen() {
               { opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <ThemedText type="body">Privacy Policy</ThemedText>
+            <ThemedText type="body">{t.profile.privacyPolicy}</ThemedText>
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </Pressable>
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="h4" style={styles.sectionTitle}>
-            Account
+            {t.profile.account}
           </ThemedText>
           <Pressable
             onPress={handleLogout}
@@ -141,7 +177,7 @@ export default function ProfileScreen() {
               { opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <ThemedText type="body">Log Out</ThemedText>
+            <ThemedText type="body">{t.profile.logOut}</ThemedText>
             <Feather name="log-out" size={20} color={theme.textSecondary} />
           </Pressable>
           <Pressable
@@ -152,7 +188,7 @@ export default function ProfileScreen() {
             ]}
           >
             <ThemedText type="body" style={{ color: colors.accent }}>
-              Delete Account
+              {t.profile.deleteAccount}
             </ThemedText>
             <Feather name="trash-2" size={20} color={colors.accent} />
           </Pressable>
@@ -216,5 +252,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: Spacing.sm,
+  },
+  languageToggle: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  langButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
   },
 });

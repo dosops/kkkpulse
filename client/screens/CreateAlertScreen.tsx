@@ -22,9 +22,11 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store, Severity } from "@/lib/store";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useI18n } from "@/lib/i18n";
 
 export default function CreateAlertScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
 
@@ -39,7 +41,7 @@ export default function CreateAlertScreen() {
 
   const pickImage = async () => {
     if (Platform.OS === 'web') {
-      Alert.alert('Not Available', 'Run in Expo Go to use the camera');
+      Alert.alert(t.common.notAvailable, t.common.runInExpoGo);
       return;
     }
 
@@ -57,13 +59,13 @@ export default function CreateAlertScreen() {
 
   const takePhoto = async () => {
     if (Platform.OS === 'web') {
-      Alert.alert('Not Available', 'Run in Expo Go to use the camera');
+      Alert.alert(t.common.notAvailable, t.common.runInExpoGo);
       return;
     }
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Camera access is needed to take photos');
+      Alert.alert(t.common.permissionRequired, t.common.cameraAccessNeeded);
       return;
     }
 
@@ -92,7 +94,7 @@ export default function CreateAlertScreen() {
     });
 
     setIsSubmitting(false);
-    Alert.alert('Success', 'Alert created successfully');
+    Alert.alert(t.common.success, t.alerts.detail.alertCreated);
     navigation.goBack();
   };
 
@@ -101,7 +103,7 @@ export default function CreateAlertScreen() {
       headerLeft: () => (
         <Pressable onPress={() => navigation.goBack()}>
           <ThemedText type="body" style={{ color: colors.primary }}>
-            Cancel
+            {t.common.cancel}
           </ThemedText>
         </Pressable>
       ),
@@ -112,12 +114,12 @@ export default function CreateAlertScreen() {
           style={{ opacity: isValid && !isSubmitting ? 1 : 0.5 }}
         >
           <ThemedText type="body" style={{ color: colors.primary, fontWeight: '600' }}>
-            Create
+            {t.create.alert.submit}
           </ThemedText>
         </Pressable>
       ),
     });
-  }, [navigation, isValid, isSubmitting, title, description, severity, imageUri]);
+  }, [navigation, isValid, isSubmitting, title, description, severity, imageUri, t]);
 
   return (
     <ThemedView style={styles.container}>
@@ -130,7 +132,7 @@ export default function CreateAlertScreen() {
       >
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Title *
+            {t.create.alert.titleField} *
           </ThemedText>
           <TextInput
             style={[
@@ -141,7 +143,7 @@ export default function CreateAlertScreen() {
                 borderColor: theme.border,
               },
             ]}
-            placeholder="Enter alert title"
+            placeholder={t.create.alert.titlePlaceholder}
             placeholderTextColor={theme.textSecondary}
             value={title}
             onChangeText={setTitle}
@@ -150,7 +152,7 @@ export default function CreateAlertScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Description
+            {t.create.alert.description}
           </ThemedText>
           <TextInput
             style={[
@@ -161,7 +163,7 @@ export default function CreateAlertScreen() {
                 borderColor: theme.border,
               },
             ]}
-            placeholder="Describe the alert..."
+            placeholder={t.create.alert.descriptionPlaceholder}
             placeholderTextColor={theme.textSecondary}
             value={description}
             onChangeText={setDescription}
@@ -173,14 +175,14 @@ export default function CreateAlertScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Severity
+            {t.create.alert.severity}
           </ThemedText>
           <SeveritySelector value={severity} onChange={setSeverity} />
         </View>
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Image (Optional)
+            {t.create.alert.addImage}
           </ThemedText>
           
           {imageUri ? (

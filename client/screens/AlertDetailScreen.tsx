@@ -22,9 +22,11 @@ import { store } from "@/lib/store";
 import { AlertsStackParamList } from "@/navigation/AlertsStackNavigator";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { formatRelativeTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export default function AlertDetailScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const route = useRoute<RouteProp<AlertsStackParamList, 'AlertDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -38,19 +40,19 @@ export default function AlertDetailScreen() {
   if (!alert) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText>Alert not found</ThemedText>
+        <ThemedText>{t.common.alertNotFound}</ThemedText>
       </ThemedView>
     );
   }
 
   const handleTakeToWork = () => {
     store.takeAlertToWork(alert.id);
-    Alert.alert('Success', 'Alert assigned to you');
+    Alert.alert(t.common.success, t.alerts.detail.alertAssigned);
   };
 
   const handleInspect = () => {
     store.inspectAlert(alert.id);
-    Alert.alert('Success', 'Alert marked as inspected');
+    Alert.alert(t.common.success, t.alerts.detail.alertInspected);
   };
 
   const handleRegisterIncident = () => {
@@ -79,7 +81,7 @@ export default function AlertDetailScreen() {
             </ThemedText>
             <View style={[styles.sourceBadge, { backgroundColor: theme.backgroundSecondary }]}>
               <ThemedText type="caption">
-                {alert.source === 'manual' ? 'Manual' : 'System'}
+                {alert.source === 'manual' ? t.alerts.source.manual : t.alerts.source.system}
               </ThemedText>
             </View>
             <StatusChip status={alert.status} />
@@ -98,7 +100,7 @@ export default function AlertDetailScreen() {
 
         <View style={[styles.infoCard, { backgroundColor: theme.backgroundDefault }]}>
           <ThemedText type="h4" style={styles.sectionTitle}>
-            Description
+            {t.alerts.detail.description}
           </ThemedText>
           <ThemedText type="body" style={{ color: theme.textSecondary }}>
             {alert.description}
@@ -107,7 +109,7 @@ export default function AlertDetailScreen() {
           {alert.metadata && Object.keys(alert.metadata).length > 0 ? (
             <View style={styles.metadataSection}>
               <ThemedText type="h4" style={styles.sectionTitle}>
-                Details
+                {t.alerts.detail.details}
               </ThemedText>
               {Object.entries(alert.metadata).map(([key, value]) => (
                 <View key={key} style={styles.metadataRow}>
@@ -124,7 +126,7 @@ export default function AlertDetailScreen() {
         {alert.actions.length > 0 ? (
           <View style={[styles.infoCard, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText type="h4" style={styles.sectionTitle}>
-              Action History
+              {t.alerts.detail.history}
             </ThemedText>
             {alert.actions.map((action, index) => (
               <View key={action.id} style={styles.timelineItem}>
@@ -134,9 +136,9 @@ export default function AlertDetailScreen() {
                 ) : null}
                 <View style={styles.timelineContent}>
                   <ThemedText type="body">
-                    {action.type === 'taken_to_work' && `Taken to work by ${action.userName}`}
-                    {action.type === 'inspected' && `Inspected by ${action.userName}`}
-                    {action.type === 'incident_registered' && `Incident registered by ${action.userName}`}
+                    {action.type === 'taken_to_work' && `${t.alerts.detail.takenToWork} - ${action.userName}`}
+                    {action.type === 'inspected' && `${t.alerts.detail.inspected} - ${action.userName}`}
+                    {action.type === 'incident_registered' && `${t.alerts.detail.incidentRegistered} - ${action.userName}`}
                   </ThemedText>
                   <ThemedText type="caption" style={{ color: theme.textSecondary }}>
                     {formatRelativeTime(action.timestamp)}
@@ -167,7 +169,7 @@ export default function AlertDetailScreen() {
         >
           <Feather name="briefcase" size={18} color="#FFFFFF" />
           <ThemedText type="small" style={styles.actionButtonText}>
-            Take to Work
+            {t.alerts.actions.takeToWork}
           </ThemedText>
         </Pressable>
 
@@ -180,7 +182,7 @@ export default function AlertDetailScreen() {
         >
           <Feather name="search" size={18} color="#FFFFFF" />
           <ThemedText type="small" style={styles.actionButtonText}>
-            Inspect
+            {t.alerts.actions.inspect}
           </ThemedText>
         </Pressable>
 
@@ -194,7 +196,7 @@ export default function AlertDetailScreen() {
         >
           <Feather name="file-plus" size={18} color="#FFFFFF" />
           <ThemedText type="small" style={styles.actionButtonText}>
-            Register
+            {t.alerts.actions.registerIncident}
           </ThemedText>
         </Pressable>
       </View>

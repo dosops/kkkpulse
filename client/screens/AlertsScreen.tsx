@@ -19,11 +19,13 @@ import { Spacing, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store, Alert, AlertStatus } from "@/lib/store";
 import { AlertsStackParamList } from "@/navigation/AlertsStackNavigator";
+import { useI18n } from "@/lib/i18n";
 
 type FilterStatus = AlertStatus | 'all';
 
 export default function AlertsScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<AlertsStackParamList>>();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -50,10 +52,10 @@ export default function AlertsScreen() {
   };
 
   const filters: { label: string; value: FilterStatus }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'New', value: 'new' },
-    { label: 'In Progress', value: 'in_progress' },
-    { label: 'Resolved', value: 'resolved' },
+    { label: t.alerts.all, value: 'all' },
+    { label: t.alerts.new, value: 'new' },
+    { label: t.alerts.inProgress, value: 'in_progress' },
+    { label: t.alerts.resolved, value: 'resolved' },
   ];
 
   return (
@@ -103,7 +105,7 @@ export default function AlertsScreen() {
           <View style={styles.emptyContainer}>
             <Feather name="bell-off" size={48} color={theme.textSecondary} />
             <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
-              No alerts found
+              {t.alerts.noAlerts}
             </ThemedText>
           </View>
         }

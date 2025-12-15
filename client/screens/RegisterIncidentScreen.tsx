@@ -20,14 +20,9 @@ import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store, Severity, IncidentCategory, Priority } from "@/lib/store";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useI18n } from "@/lib/i18n";
 
-const categories: { label: string; value: IncidentCategory }[] = [
-  { label: 'Hardware', value: 'hardware' },
-  { label: 'Software', value: 'software' },
-  { label: 'Network', value: 'network' },
-  { label: 'Security', value: 'security' },
-  { label: 'Other', value: 'other' },
-];
+const categoryValues: IncidentCategory[] = ['hardware', 'software', 'network', 'security', 'other'];
 
 const priorities: { label: string; value: Priority }[] = [
   { label: 'P0', value: 'P0' },
@@ -39,6 +34,7 @@ const priorities: { label: string; value: Priority }[] = [
 
 export default function RegisterIncidentScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'RegisterIncident'>>();
   const insets = useSafeAreaInsets();
@@ -63,12 +59,12 @@ export default function RegisterIncidentScreen() {
     if (!isValid || !alert) return;
 
     Alert.alert(
-      'Confirm Registration',
-      'Convert this alert to an incident?',
+      t.create.incident.confirmTitle,
+      t.create.incident.confirmMessage,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Register',
+          text: t.create.incident.register,
           onPress: () => {
             setIsSubmitting(true);
 
@@ -84,7 +80,7 @@ export default function RegisterIncidentScreen() {
             });
 
             setIsSubmitting(false);
-            Alert.alert('Success', 'Incident registered successfully');
+            Alert.alert(t.common.success, t.create.incident.successMessage);
             navigation.popToTop();
           },
         },
@@ -97,7 +93,7 @@ export default function RegisterIncidentScreen() {
       headerLeft: () => (
         <Pressable onPress={() => navigation.goBack()}>
           <ThemedText type="body" style={{ color: colors.primary }}>
-            Cancel
+            {t.common.cancel}
           </ThemedText>
         </Pressable>
       ),
@@ -108,17 +104,17 @@ export default function RegisterIncidentScreen() {
           style={{ opacity: isValid && !isSubmitting ? 1 : 0.5 }}
         >
           <ThemedText type="body" style={{ color: colors.primary, fontWeight: '600' }}>
-            Register
+            {t.create.incident.submit}
           </ThemedText>
         </Pressable>
       ),
     });
-  }, [navigation, isValid, isSubmitting, title, severity, category, priority, notes]);
+  }, [navigation, isValid, isSubmitting, title, severity, category, priority, notes, t]);
 
   if (!alert) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText>Alert not found</ThemedText>
+        <ThemedText>{t.common.alertNotFound}</ThemedText>
       </ThemedView>
     );
   }
@@ -136,7 +132,7 @@ export default function RegisterIncidentScreen() {
           <View style={styles.alertHeader}>
             <Feather name="alert-circle" size={20} color={theme.textSecondary} />
             <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Source Alert
+              {t.create.incident.sourceAlert}
             </ThemedText>
           </View>
           <ThemedText type="body" style={{ fontWeight: '600' }}>
@@ -147,7 +143,7 @@ export default function RegisterIncidentScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Incident Title *
+            {t.create.incident.titleField} *
           </ThemedText>
           <TextInput
             style={[
@@ -158,7 +154,7 @@ export default function RegisterIncidentScreen() {
                 borderColor: theme.border,
               },
             ]}
-            placeholder="Enter incident title"
+            placeholder={t.create.incident.titleField}
             placeholderTextColor={theme.textSecondary}
             value={title}
             onChangeText={setTitle}
@@ -167,24 +163,24 @@ export default function RegisterIncidentScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Severity
+            {t.create.incident.severity}
           </ThemedText>
           <SeveritySelector value={severity} onChange={setSeverity} />
         </View>
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Category
+            {t.create.incident.category}
           </ThemedText>
           <View style={styles.optionsRow}>
-            {categories.map((c) => (
+            {categoryValues.map((c) => (
               <Pressable
-                key={c.value}
-                onPress={() => setCategory(c.value)}
+                key={c}
+                onPress={() => setCategory(c)}
                 style={[
                   styles.optionChip,
                   {
-                    backgroundColor: category === c.value
+                    backgroundColor: category === c
                       ? colors.primary
                       : theme.backgroundSecondary,
                   },
@@ -192,9 +188,9 @@ export default function RegisterIncidentScreen() {
               >
                 <ThemedText
                   type="small"
-                  style={{ color: category === c.value ? '#FFFFFF' : theme.text }}
+                  style={{ color: category === c ? '#FFFFFF' : theme.text }}
                 >
-                  {c.label}
+                  {t.incidents.categories[c]}
                 </ThemedText>
               </Pressable>
             ))}
@@ -203,7 +199,7 @@ export default function RegisterIncidentScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Priority
+            {t.create.incident.priority}
           </ThemedText>
           <View style={styles.optionsRow}>
             {priorities.map((p) => (
@@ -232,7 +228,7 @@ export default function RegisterIncidentScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            Notes
+            {t.create.incident.notes}
           </ThemedText>
           <TextInput
             style={[
@@ -243,7 +239,7 @@ export default function RegisterIncidentScreen() {
                 borderColor: theme.border,
               },
             ]}
-            placeholder="Add notes or additional context..."
+            placeholder={t.create.incident.notesPlaceholder}
             placeholderTextColor={theme.textSecondary}
             value={notes}
             onChangeText={setNotes}
