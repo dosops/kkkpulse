@@ -234,10 +234,31 @@ let alertsSnapshot = [...alerts].sort((a, b) => b.createdAt.getTime() - a.create
 let incidentsSnapshot = [...incidents].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 let activitiesSnapshot = [...activities].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+function computeStatusMetrics() {
+  const closedIncidents = incidents.filter(i => i.status === 'closed');
+  const totalDowntimeMinutes = closedIncidents.reduce((sum, i) => sum + (i.downtimeMinutes || 0), 0);
+  const openIncidents = incidents.filter(i => i.status === 'open' || i.status === 'in_progress');
+  const resolvedIncidents = incidents.filter(i => i.status === 'resolved' || i.status === 'closed');
+  
+  const totalMinutesIn30Days = 30 * 24 * 60;
+  const availabilityPercent = ((totalMinutesIn30Days - totalDowntimeMinutes) / totalMinutesIn30Days) * 100;
+
+  return {
+    availabilityPercent: Math.max(0, Math.min(100, availabilityPercent)),
+    totalDowntimeMinutes,
+    totalIncidents: incidents.length,
+    openIncidentsCount: openIncidents.length,
+    resolvedIncidentsCount: resolvedIncidents.length,
+  };
+}
+
+let statusMetricsSnapshot = computeStatusMetrics();
+
 function notifyListeners() {
   alertsSnapshot = [...alerts].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   incidentsSnapshot = [...incidents].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   activitiesSnapshot = [...activities].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  statusMetricsSnapshot = computeStatusMetrics();
   listeners.forEach(l => l());
 }
 
@@ -410,22 +431,7 @@ export const store = {
   },
 
   getStatusMetrics() {
-    const closedIncidents = incidents.filter(i => i.status === 'closed');
-    const totalDowntimeMinutes = closedIncidents.reduce((sum, i) => sum + (i.downtimeMinutes || 0), 0);
-    const openIncidents = incidents.filter(i => i.status === 'open' || i.status === 'in_progress');
-    const resolvedIncidents = incidents.filter(i => i.status === 'resolved' || i.status === 'closed');
-    
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const totalMinutesIn30Days = 30 * 24 * 60;
-    const availabilityPercent = ((totalMinutesIn30Days - totalDowntimeMinutes) / totalMinutesIn30Days) * 100;
-
-    return {
-      availabilityPercent: Math.max(0, Math.min(100, availabilityPercent)),
-      totalDowntimeMinutes,
-      totalIncidents: incidents.length,
-      openIncidentsCount: openIncidents.length,
-      resolvedIncidentsCount: resolvedIncidents.length,
-    };
+    return statusMetricsSnapshot;
   },
 
   getActivities() {
