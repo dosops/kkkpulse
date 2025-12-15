@@ -191,6 +191,20 @@ const translations = {
       placeholder: 'Write a comment...',
       send: 'Send',
     },
+    organization: {
+      selectOrganization: 'Select Organization',
+      currentOrganization: 'Current Organization',
+    },
+    groupBy: {
+      label: 'Group by',
+      none: 'None',
+      severity: 'Severity',
+      status: 'Status',
+      time: 'Time',
+      today: 'Today',
+      yesterday: 'Yesterday',
+      older: 'Older',
+    },
   },
   ru: {
     tabs: {
@@ -378,6 +392,20 @@ const translations = {
       noComments: 'Пока нет комментариев',
       placeholder: 'Напишите комментарий...',
       send: 'Отправить',
+    },
+    organization: {
+      selectOrganization: 'Выберите организацию',
+      currentOrganization: 'Текущая организация',
+    },
+    groupBy: {
+      label: 'Группировать по',
+      none: 'Без группировки',
+      severity: 'Критичность',
+      status: 'Статус',
+      time: 'Время',
+      today: 'Сегодня',
+      yesterday: 'Вчера',
+      older: 'Ранее',
     },
   },
 };

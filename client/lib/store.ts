@@ -332,6 +332,7 @@ let incidentsSnapshot = getFilteredIncidents();
 let activitiesSnapshot = [...activities].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 let currentOrganizationSnapshot = organizations.find(o => o.id === currentOrganizationId) || organizations[0];
 let organizationsSnapshot = [...organizations];
+let userOrganizationsSnapshot = organizations.filter(o => currentUser.organizationIds.includes(o.id));
 let alertGroupBySnapshot: AlertGroupBy = alertGroupBy;
 
 function computeStatusMetrics() {
@@ -361,6 +362,7 @@ function notifyListeners() {
   activitiesSnapshot = [...activities].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   currentOrganizationSnapshot = organizations.find(o => o.id === currentOrganizationId) || organizations[0];
   organizationsSnapshot = [...organizations];
+  userOrganizationsSnapshot = organizations.filter(o => currentUser.organizationIds.includes(o.id));
   alertGroupBySnapshot = alertGroupBy;
   statusMetricsSnapshot = computeStatusMetrics();
   listeners.forEach(l => l());
@@ -394,7 +396,7 @@ export const store = {
   },
 
   getUserOrganizations() {
-    return organizations.filter(o => currentUser.organizationIds.includes(o.id));
+    return userOrganizationsSnapshot;
   },
 
   getAlertGroupBy() {
