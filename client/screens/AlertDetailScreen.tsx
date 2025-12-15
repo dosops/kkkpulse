@@ -8,6 +8,7 @@ import {
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 
@@ -29,6 +30,7 @@ export default function AlertDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const route = useRoute<RouteProp<AlertsStackParamList, 'AlertDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
@@ -68,7 +70,7 @@ export default function AlertDetailScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: 100 + insets.bottom },
+          { paddingBottom: 80 + tabBarHeight },
         ]}
       >
         <View style={styles.header}>
@@ -161,7 +163,7 @@ export default function AlertDetailScreen() {
           styles.actionBar,
           {
             backgroundColor: theme.backgroundRoot,
-            paddingBottom: insets.bottom + Spacing.md,
+            bottom: tabBarHeight,
             borderTopColor: theme.border,
           },
         ]}
