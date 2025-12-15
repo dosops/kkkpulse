@@ -12,6 +12,8 @@ Frontend prototype complete with mock data. Ready for user feedback before backe
 - **Incidents Management**: Track incidents with severity, priority, and custom fields
 - **Activity Feed**: View recent actions across the team
 - **User Profile**: View user information and statistics
+- **Multi-Organization Support**: Switch between organizations with org selector in header
+- **Alert Grouping**: Group alerts by severity, status, or time period
 
 ## Project Architecture
 
@@ -36,7 +38,8 @@ client/
 │   ├── StatusChip.tsx
 │   ├── PriorityBadge.tsx
 │   ├── SeveritySelector.tsx
-│   └── HeaderTitle.tsx
+│   ├── HeaderTitle.tsx
+│   └── OrganizationSelector.tsx
 ├── screens/         # Screen components
 │   ├── AlertsScreen.tsx
 │   ├── AlertDetailScreen.tsx
@@ -80,3 +83,5 @@ This starts both the Expo development server (port 8081) and the Express server 
 ## Recent Changes
 - December 2024: Initial frontend prototype with all screens and navigation
 - December 2024: Fixed useSyncExternalStore infinite loop with snapshot caching
+- December 2024: Added multi-organization support with org selector in header
+- December 2024: Added alert grouping by severity, status, and time period
