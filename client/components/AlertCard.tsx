@@ -10,7 +10,6 @@ import { Image } from "expo-image";
 
 import { ThemedText } from "@/components/ThemedText";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { StatusChip } from "@/components/StatusChip";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { Alert } from "@/lib/store";
@@ -22,6 +21,43 @@ interface AlertCardProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function AlertStatusIndicator({ alert, colors }: { alert: Alert; colors: typeof Colors.light; theme: any }) {
+  const actions = alert.actions || [];
+  const incidentAction = actions.find(a => a.type === 'incident_registered');
+  const takenAction = actions.find(a => a.type === 'taken_to_work');
+  
+  if (incidentAction) {
+    return (
+      <View style={[styles.statusRow, { backgroundColor: colors.success + '20' }]}>
+        <Feather name="check-circle" size={14} color={colors.success} />
+        <ThemedText type="caption" style={{ color: colors.success }}>
+          Incident registered by {incidentAction.userName}
+        </ThemedText>
+      </View>
+    );
+  }
+  
+  if (takenAction) {
+    return (
+      <View style={[styles.statusRow, { backgroundColor: colors.primary + '20' }]}>
+        <Feather name="user" size={14} color={colors.primary} />
+        <ThemedText type="caption" style={{ color: colors.primary }}>
+          In progress: {takenAction.userName}
+        </ThemedText>
+      </View>
+    );
+  }
+  
+  return (
+    <View style={[styles.statusRow, { backgroundColor: colors.severityHigh + '20' }]}>
+      <Feather name="alert-circle" size={14} color={colors.severityHigh} />
+      <ThemedText type="caption" style={{ color: colors.severityHigh }}>
+        New - not reviewed
+      </ThemedText>
+    </View>
+  );
+}
 
 export function AlertCard({ alert, onPress }: AlertCardProps) {
   const { theme, isDark } = useTheme();
@@ -68,8 +104,8 @@ export function AlertCard({ alert, onPress }: AlertCardProps) {
                 {alert.source === 'manual' ? 'Manual' : 'System'}
               </ThemedText>
             </View>
-            <StatusChip status={alert.status} compact />
           </View>
+          <AlertStatusIndicator alert={alert} colors={colors} theme={theme} />
         </View>
         {alert.imageUri ? (
           <Image
@@ -121,6 +157,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
     paddingVertical: 2,
     borderRadius: 6,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    alignSelf: 'flex-start',
   },
   thumbnail: {
     width: 60,
