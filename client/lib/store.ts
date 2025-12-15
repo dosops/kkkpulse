@@ -3,12 +3,20 @@ export type AlertStatus = 'new' | 'in_progress' | 'resolved';
 export type IncidentStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 export type IncidentCategory = 'hardware' | 'software' | 'network' | 'security' | 'other';
 export type Priority = 'P0' | 'P1' | 'P2' | 'P3' | 'P4';
+export type AlertGroupBy = 'none' | 'severity' | 'status' | 'time';
+
+export interface Organization {
+  id: string;
+  name: string;
+  shortName: string;
+}
 
 export interface User {
   id: string;
   name: string;
   email: string;
   avatar: number;
+  organizationIds: string[];
 }
 
 export interface Comment {
@@ -29,6 +37,7 @@ export interface AlertAction {
 
 export interface Alert {
   id: string;
+  organizationId: string;
   title: string;
   description: string;
   severity: Severity;
@@ -43,6 +52,7 @@ export interface Alert {
 
 export interface Incident {
   id: string;
+  organizationId: string;
   alertId: string;
   title: string;
   description: string;
@@ -74,16 +84,28 @@ export interface ActivityItem {
   timestamp: Date;
 }
 
+const organizations: Organization[] = [
+  { id: 'org-1', name: 'Acme Corporation', shortName: 'ACME' },
+  { id: 'org-2', name: 'TechStart Inc.', shortName: 'TECH' },
+  { id: 'org-3', name: 'Global Systems', shortName: 'GS' },
+];
+
+let currentOrganizationId = 'org-1';
+
 const currentUser: User = {
   id: 'user-1',
   name: 'John Doe',
   email: 'john.doe@company.com',
   avatar: 1,
+  organizationIds: ['org-1', 'org-2', 'org-3'],
 };
+
+let alertGroupBy: AlertGroupBy = 'none';
 
 let alerts: Alert[] = [
   {
     id: 'alert-1',
+    organizationId: 'org-1',
     title: 'High CPU Usage on Server-01',
     description: 'CPU usage has exceeded 90% threshold for more than 5 minutes. Immediate attention required.',
     severity: 'critical',
@@ -96,6 +118,7 @@ let alerts: Alert[] = [
   },
   {
     id: 'alert-2',
+    organizationId: 'org-1',
     title: 'Database Connection Pool Exhausted',
     description: 'Connection pool has reached maximum capacity. New connections are being rejected.',
     severity: 'high',
@@ -110,6 +133,7 @@ let alerts: Alert[] = [
   },
   {
     id: 'alert-3',
+    organizationId: 'org-1',
     title: 'SSL Certificate Expiring Soon',
     description: 'SSL certificate for api.company.com will expire in 7 days.',
     severity: 'medium',
@@ -122,6 +146,7 @@ let alerts: Alert[] = [
   },
   {
     id: 'alert-4',
+    organizationId: 'org-1',
     title: 'Unusual Login Activity Detected',
     description: 'Multiple failed login attempts from IP 192.168.1.100.',
     severity: 'high',
@@ -134,6 +159,7 @@ let alerts: Alert[] = [
   },
   {
     id: 'alert-5',
+    organizationId: 'org-1',
     title: 'Disk Space Warning',
     description: 'Storage on backup-server is at 85% capacity.',
     severity: 'low',
@@ -147,11 +173,51 @@ let alerts: Alert[] = [
     metadata: { 'Server': 'backup-server', 'Usage': '85%' },
     comments: [],
   },
+  {
+    id: 'alert-6',
+    organizationId: 'org-2',
+    title: 'API Rate Limit Exceeded',
+    description: 'Payment gateway API rate limit reached. Throttling in effect.',
+    severity: 'high',
+    status: 'new',
+    source: 'system',
+    createdAt: new Date(Date.now() - 10 * 60 * 1000),
+    actions: [],
+    metadata: { 'Service': 'Payment Gateway', 'Limit': '1000/min' },
+    comments: [],
+  },
+  {
+    id: 'alert-7',
+    organizationId: 'org-2',
+    title: 'Memory Leak Detected',
+    description: 'Application server memory usage increasing steadily.',
+    severity: 'medium',
+    status: 'in_progress',
+    source: 'system',
+    createdAt: new Date(Date.now() - 45 * 60 * 1000),
+    actions: [],
+    metadata: { 'Server': 'app-server-02', 'Memory': '87%' },
+    comments: [],
+  },
+  {
+    id: 'alert-8',
+    organizationId: 'org-3',
+    title: 'Backup Job Failed',
+    description: 'Nightly backup job failed due to insufficient storage.',
+    severity: 'critical',
+    status: 'new',
+    source: 'system',
+    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+    actions: [],
+    metadata: { 'Job': 'nightly-backup', 'Storage': 'NAS-01' },
+    comments: [],
+  },
 ];
 
 let incidents: Incident[] = [
   {
     id: 'INC-2024-001',
+    organizationId: 'org-1',
     alertId: 'alert-old-1',
     title: 'Production Database Outage',
     description: 'Complete database outage affecting all production services.',
@@ -169,6 +235,7 @@ let incidents: Incident[] = [
   },
   {
     id: 'INC-2024-002',
+    organizationId: 'org-1',
     alertId: 'alert-old-2',
     title: 'Network Latency Issues',
     description: 'Intermittent high latency affecting API responses.',
@@ -182,6 +249,24 @@ let incidents: Incident[] = [
     customFields: { 'Affected Region': 'EU-West', 'Latency': '500ms+' },
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    comments: [],
+  },
+  {
+    id: 'INC-2024-003',
+    organizationId: 'org-2',
+    alertId: 'alert-old-3',
+    title: 'Payment Processing Delay',
+    description: 'Payment gateway experiencing intermittent delays.',
+    severity: 'high',
+    status: 'open',
+    category: 'software',
+    priority: 'P1',
+    assigneeId: 'user-1',
+    assigneeName: 'John Doe',
+    notes: 'Investigating third-party API issues.',
+    customFields: { 'Gateway': 'Stripe', 'Delay': '5-10 seconds' },
+    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
     comments: [],
   },
 ];
@@ -225,20 +310,36 @@ let activities: ActivityItem[] = [
   },
 ];
 
-let nextAlertNum = 6;
-let nextIncidentNum = 3;
+let nextAlertNum = 9;
+let nextIncidentNum = 4;
 let nextActivityNum = 5;
 let listeners: (() => void)[] = [];
 
-let alertsSnapshot = [...alerts].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-let incidentsSnapshot = [...incidents].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+function getFilteredAlerts() {
+  return alerts
+    .filter(a => a.organizationId === currentOrganizationId)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+function getFilteredIncidents() {
+  return incidents
+    .filter(i => i.organizationId === currentOrganizationId)
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+}
+
+let alertsSnapshot = getFilteredAlerts();
+let incidentsSnapshot = getFilteredIncidents();
 let activitiesSnapshot = [...activities].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+let currentOrganizationSnapshot = organizations.find(o => o.id === currentOrganizationId) || organizations[0];
+let organizationsSnapshot = [...organizations];
+let alertGroupBySnapshot: AlertGroupBy = alertGroupBy;
 
 function computeStatusMetrics() {
-  const closedIncidents = incidents.filter(i => i.status === 'closed');
+  const orgIncidents = incidents.filter(i => i.organizationId === currentOrganizationId);
+  const closedIncidents = orgIncidents.filter(i => i.status === 'closed');
   const totalDowntimeMinutes = closedIncidents.reduce((sum, i) => sum + (i.downtimeMinutes || 0), 0);
-  const openIncidents = incidents.filter(i => i.status === 'open' || i.status === 'in_progress');
-  const resolvedIncidents = incidents.filter(i => i.status === 'resolved' || i.status === 'closed');
+  const openIncidents = orgIncidents.filter(i => i.status === 'open' || i.status === 'in_progress');
+  const resolvedIncidents = orgIncidents.filter(i => i.status === 'resolved' || i.status === 'closed');
   
   const totalMinutesIn30Days = 30 * 24 * 60;
   const availabilityPercent = ((totalMinutesIn30Days - totalDowntimeMinutes) / totalMinutesIn30Days) * 100;
@@ -246,7 +347,7 @@ function computeStatusMetrics() {
   return {
     availabilityPercent: Math.max(0, Math.min(100, availabilityPercent)),
     totalDowntimeMinutes,
-    totalIncidents: incidents.length,
+    totalIncidents: orgIncidents.length,
     openIncidentsCount: openIncidents.length,
     resolvedIncidentsCount: resolvedIncidents.length,
   };
@@ -255,9 +356,12 @@ function computeStatusMetrics() {
 let statusMetricsSnapshot = computeStatusMetrics();
 
 function notifyListeners() {
-  alertsSnapshot = [...alerts].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  incidentsSnapshot = [...incidents].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  alertsSnapshot = getFilteredAlerts();
+  incidentsSnapshot = getFilteredIncidents();
   activitiesSnapshot = [...activities].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  currentOrganizationSnapshot = organizations.find(o => o.id === currentOrganizationId) || organizations[0];
+  organizationsSnapshot = [...organizations];
+  alertGroupBySnapshot = alertGroupBy;
   statusMetricsSnapshot = computeStatusMetrics();
   listeners.forEach(l => l());
 }
@@ -274,6 +378,34 @@ export const store = {
     return currentUser;
   },
 
+  getOrganizations() {
+    return organizationsSnapshot;
+  },
+
+  getCurrentOrganization() {
+    return currentOrganizationSnapshot;
+  },
+
+  setCurrentOrganization(orgId: string) {
+    if (currentUser.organizationIds.includes(orgId)) {
+      currentOrganizationId = orgId;
+      notifyListeners();
+    }
+  },
+
+  getUserOrganizations() {
+    return organizations.filter(o => currentUser.organizationIds.includes(o.id));
+  },
+
+  getAlertGroupBy() {
+    return alertGroupBySnapshot;
+  },
+
+  setAlertGroupBy(groupBy: AlertGroupBy) {
+    alertGroupBy = groupBy;
+    notifyListeners();
+  },
+
   getAlerts() {
     return alertsSnapshot;
   },
@@ -282,10 +414,11 @@ export const store = {
     return alerts.find(a => a.id === id);
   },
 
-  createAlert(data: Omit<Alert, 'id' | 'createdAt' | 'actions' | 'status' | 'comments'>) {
+  createAlert(data: Omit<Alert, 'id' | 'createdAt' | 'actions' | 'status' | 'comments' | 'organizationId'>) {
     const alert: Alert = {
       ...data,
       id: `alert-${nextAlertNum++}`,
+      organizationId: currentOrganizationId,
       status: 'new',
       createdAt: new Date(),
       actions: [],
@@ -366,13 +499,14 @@ export const store = {
     return incidents.find(i => i.id === id);
   },
 
-  createIncident(alertId: string, data: Omit<Incident, 'id' | 'alertId' | 'createdAt' | 'updatedAt'>) {
+  createIncident(alertId: string, data: Omit<Incident, 'id' | 'alertId' | 'createdAt' | 'updatedAt' | 'organizationId'>) {
     const alert = alerts.find(a => a.id === alertId);
     if (!alert) return;
 
     const incident: Incident = {
       ...data,
       id: `INC-2024-${String(nextIncidentNum++).padStart(3, '0')}`,
+      organizationId: currentOrganizationId,
       alertId,
       createdAt: new Date(),
       updatedAt: new Date(),
