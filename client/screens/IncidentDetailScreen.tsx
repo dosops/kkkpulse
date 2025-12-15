@@ -2,7 +2,6 @@ import React, { useState, useSyncExternalStore } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   Modal,
   TextInput,
   Pressable,
@@ -18,6 +17,8 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { StatusChip } from "@/components/StatusChip";
 import { PriorityBadge } from "@/components/PriorityBadge";
 import { Button } from "@/components/Button";
+import { CommentsSection } from "@/components/CommentsSection";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store, IncidentCategory } from "@/lib/store";
@@ -82,7 +83,7 @@ export default function IncidentDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
@@ -224,6 +225,11 @@ export default function IncidentDetailScreen() {
           ) : null}
         </View>
 
+        <CommentsSection
+          comments={incident.comments}
+          onAddComment={(text) => store.addIncidentComment(incident.id, text)}
+        />
+
         {canClose ? (
           <Button
             onPress={() => {
@@ -236,7 +242,7 @@ export default function IncidentDetailScreen() {
             {t.incidents.close}
           </Button>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
 
       <Modal
         visible={showCloseModal}

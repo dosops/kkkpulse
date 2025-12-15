@@ -184,6 +184,13 @@ const translations = {
       createAlert: 'Create Alert',
       registerIncident: 'Register Incident',
     },
+    dialog: {
+      title: 'Discussion',
+      addComment: 'Add comment',
+      noComments: 'No comments yet',
+      placeholder: 'Write a comment...',
+      send: 'Send',
+    },
   },
   ru: {
     tabs: {
@@ -364,6 +371,13 @@ const translations = {
     fab: {
       createAlert: 'Создать алерт',
       registerIncident: 'Зарегистрировать инцидент',
+    },
+    dialog: {
+      title: 'Обсуждение',
+      addComment: 'Добавить комментарий',
+      noComments: 'Пока нет комментариев',
+      placeholder: 'Напишите комментарий...',
+      send: 'Отправить',
     },
   },
 };

@@ -11,6 +11,14 @@ export interface User {
   avatar: number;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: Date;
+}
+
 export interface AlertAction {
   id: string;
   type: 'taken_to_work' | 'inspected' | 'incident_registered';
@@ -30,6 +38,7 @@ export interface Alert {
   createdAt: Date;
   actions: AlertAction[];
   metadata?: Record<string, string>;
+  comments: Comment[];
 }
 
 export interface Incident {
@@ -52,6 +61,7 @@ export interface Incident {
   incidentEndTime?: Date;
   consequences?: string;
   downtimeMinutes?: number;
+  comments: Comment[];
 }
 
 export interface ActivityItem {
@@ -82,6 +92,7 @@ let alerts: Alert[] = [
     createdAt: new Date(Date.now() - 5 * 60 * 1000),
     actions: [],
     metadata: { 'Server': 'Server-01', 'Region': 'US-East' },
+    comments: [],
   },
   {
     id: 'alert-2',
@@ -95,6 +106,7 @@ let alerts: Alert[] = [
       { id: 'action-1', type: 'taken_to_work', userId: 'user-1', userName: 'John Doe', timestamp: new Date(Date.now() - 10 * 60 * 1000) },
     ],
     metadata: { 'Database': 'PostgreSQL', 'Pool Size': '100' },
+    comments: [],
   },
   {
     id: 'alert-3',
@@ -106,6 +118,7 @@ let alerts: Alert[] = [
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
     actions: [],
     metadata: { 'Domain': 'api.company.com', 'Expiry': '7 days' },
+    comments: [],
   },
   {
     id: 'alert-4',
@@ -117,6 +130,7 @@ let alerts: Alert[] = [
     createdAt: new Date(Date.now() - 30 * 60 * 1000),
     actions: [],
     metadata: { 'IP Address': '192.168.1.100', 'Attempts': '15' },
+    comments: [],
   },
   {
     id: 'alert-5',
@@ -131,6 +145,7 @@ let alerts: Alert[] = [
       { id: 'action-3', type: 'inspected', userId: 'user-2', userName: 'Jane Smith', timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000) },
     ],
     metadata: { 'Server': 'backup-server', 'Usage': '85%' },
+    comments: [],
   },
 ];
 
@@ -150,6 +165,7 @@ let incidents: Incident[] = [
     customFields: { 'Impact': 'All customers', 'Downtime': '45 minutes' },
     createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
+    comments: [],
   },
   {
     id: 'INC-2024-002',
@@ -166,6 +182,7 @@ let incidents: Incident[] = [
     customFields: { 'Affected Region': 'EU-West', 'Latency': '500ms+' },
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    comments: [],
   },
 ];
 
@@ -244,13 +261,14 @@ export const store = {
     return alerts.find(a => a.id === id);
   },
 
-  createAlert(data: Omit<Alert, 'id' | 'createdAt' | 'actions' | 'status'>) {
+  createAlert(data: Omit<Alert, 'id' | 'createdAt' | 'actions' | 'status' | 'comments'>) {
     const alert: Alert = {
       ...data,
       id: `alert-${nextAlertNum++}`,
       status: 'new',
       createdAt: new Date(),
       actions: [],
+      comments: [],
     };
     alerts = [alert, ...alerts];
     
@@ -412,5 +430,43 @@ export const store = {
 
   getActivities() {
     return activitiesSnapshot;
+  },
+
+  addAlertComment(alertId: string, text: string) {
+    const alertIndex = alerts.findIndex(a => a.id === alertId);
+    if (alertIndex === -1) return;
+
+    const comment: Comment = {
+      id: `comment-${Date.now()}`,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      text,
+      createdAt: new Date(),
+    };
+    
+    alerts = alerts.map((a, i) => 
+      i === alertIndex ? { ...a, comments: [...a.comments, comment] } : a
+    );
+    notifyListeners();
+    return comment;
+  },
+
+  addIncidentComment(incidentId: string, text: string) {
+    const incidentIndex = incidents.findIndex(i => i.id === incidentId);
+    if (incidentIndex === -1) return;
+
+    const comment: Comment = {
+      id: `comment-${Date.now()}`,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      text,
+      createdAt: new Date(),
+    };
+    
+    incidents = incidents.map((inc, i) => 
+      i === incidentIndex ? { ...inc, comments: [...inc.comments, comment], updatedAt: new Date() } : inc
+    );
+    notifyListeners();
+    return comment;
   },
 };

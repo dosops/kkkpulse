@@ -2,7 +2,6 @@ import React, { useSyncExternalStore } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   Pressable,
   Alert,
 } from "react-native";
@@ -16,6 +15,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { StatusChip } from "@/components/StatusChip";
+import { CommentsSection } from "@/components/CommentsSection";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { store } from "@/lib/store";
@@ -63,7 +64,7 @@ export default function AlertDetailScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
@@ -148,7 +149,12 @@ export default function AlertDetailScreen() {
             ))}
           </View>
         ) : null}
-      </ScrollView>
+
+        <CommentsSection
+          comments={alert.comments}
+          onAddComment={(text) => store.addAlertComment(alert.id, text)}
+        />
+      </KeyboardAwareScrollViewCompat>
 
       <View
         style={[
