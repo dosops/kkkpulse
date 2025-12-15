@@ -1,12 +1,14 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
-import ModalScreen from "@/screens/ModalScreen";
+import CreateAlertScreen from "@/screens/CreateAlertScreen";
+import RegisterIncidentScreen from "@/screens/RegisterIncidentScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type RootStackParamList = {
   Main: undefined;
-  Modal: undefined;
+  CreateAlert: undefined;
+  RegisterIncident: { alertId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,11 +24,19 @@ export default function RootStackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Modal"
-        component={ModalScreen}
+        name="CreateAlert"
+        component={CreateAlertScreen}
         options={{
           presentation: "modal",
-          headerTitle: "Modal",
+          headerTitle: "New Alert",
+        }}
+      />
+      <Stack.Screen
+        name="RegisterIncident"
+        component={RegisterIncidentScreen}
+        options={{
+          presentation: "modal",
+          headerTitle: "Register Incident",
         }}
       />
     </Stack.Navigator>
