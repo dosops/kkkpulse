@@ -44,6 +44,8 @@ The following environment variables are required:
 
 ## Installation
 
+### Option 1: Local Installation
+
 1. Clone the repository or fork the Replit project
 
 2. Install dependencies:
@@ -54,6 +56,30 @@ npm install
 3. Set up the database:
 ```bash
 npm run db:push
+```
+
+### Option 2: Docker
+
+1. Make sure Docker and Docker Compose are installed
+
+2. Start the application:
+```bash
+docker-compose up
+```
+
+This will start:
+- The application on ports 5000 (API) and 8081 (Expo)
+- PostgreSQL database on port 5432
+
+To stop the application:
+```bash
+docker-compose down
+```
+
+To reset the database:
+```bash
+docker-compose down -v
+docker-compose up
 ```
 
 ## Running the Application
