@@ -9,17 +9,15 @@ services:
       - "5000:5000"
       - "8081:8081"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/alerthub
-      - SESSION_SECRET=${SESSION_SECRET:-your-secret-key-change-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-alerthub-dev-secret-key}
       - EXPO_PUBLIC_DOMAIN=localhost:5000
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./client:/app/client
-      - ./server:/app/server
-      - ./shared:/app/shared
+      - .:/app
       - /app/node_modules
     command: npm run all:dev
 
