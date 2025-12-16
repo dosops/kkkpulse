@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useSyncExternalStore } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
   FlatList,
   RefreshControl,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -15,43 +16,41 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IncidentCard } from "@/components/IncidentCard";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { store, Incident } from "@/lib/store";
+import { useIncidents, Incident } from "@/lib/api";
 import { IncidentsStackParamList } from "@/navigation/IncidentsStackNavigator";
 import { useI18n } from "@/lib/i18n";
 
 export default function IncidentsScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<IncidentsStackParamList>>();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const colors = isDark ? Colors.dark : Colors.light;
 
-  const incidents = useSyncExternalStore(
-    store.subscribe,
-    store.getIncidents,
-    store.getIncidents
-  );
+  const { data: incidents = [], isLoading, refetch, isRefetching } = useIncidents();
 
   const filteredIncidents = searchQuery
     ? incidents.filter(i => 
         i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (i.assigneeName?.toLowerCase().includes(searchQuery.toLowerCase()))
+        i.id.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : incidents;
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
-  }, []);
 
   const handleIncidentPress = (incident: Incident) => {
     navigation.navigate('IncidentDetail', { incidentId: incident.id });
   };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -87,7 +86,7 @@ export default function IncidentsScreen() {
           { paddingBottom: tabBarHeight + Spacing.xl },
         ]}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
@@ -107,6 +106,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   searchContainer: {
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.sm,
@@ -124,18 +127,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
   separator: {
     height: Spacing.sm,
   },
   emptyContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 100,
+    paddingVertical: Spacing['3xl'],
+    gap: Spacing.md,
   },
   emptyText: {
-    marginTop: Spacing.md,
+    textAlign: 'center',
   },
 });

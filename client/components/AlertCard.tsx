@@ -6,13 +6,12 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 
 import { ThemedText } from "@/components/ThemedText";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { Alert } from "@/lib/store";
+import { Alert } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
@@ -23,28 +22,24 @@ interface AlertCardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function AlertStatusIndicator({ alert, colors, t }: { alert: Alert; colors: typeof Colors.light; theme: any; t: any }) {
-  const actions = alert.actions || [];
-  const incidentAction = actions.find(a => a.type === 'incident_registered');
-  const takenAction = actions.find(a => a.type === 'taken_to_work');
-  
-  if (incidentAction) {
+function AlertStatusIndicator({ alert, colors, t }: { alert: Alert; colors: typeof Colors.light; t: any }) {
+  if (alert.status === 'resolved') {
     return (
       <View style={[styles.statusRow, { backgroundColor: colors.success + '20' }]}>
         <Feather name="check-circle" size={14} color={colors.success} />
         <ThemedText type="caption" style={{ color: colors.success }}>
-          {t.alerts.status.incidentRegisteredBy} {incidentAction.userName}
+          {t.alerts.resolved}
         </ThemedText>
       </View>
     );
   }
   
-  if (takenAction) {
+  if (alert.status === 'in_progress' || alert.status === 'acknowledged') {
     return (
       <View style={[styles.statusRow, { backgroundColor: colors.primary + '20' }]}>
         <Feather name="user" size={14} color={colors.primary} />
         <ThemedText type="caption" style={{ color: colors.primary }}>
-          {t.alerts.status.inProgressBy} {takenAction.userName}
+          {t.alerts.inProgress}
         </ThemedText>
       </View>
     );
@@ -77,6 +72,8 @@ export function AlertCard({ alert, onPress }: AlertCardProps) {
     transform: [{ scale: scale.value }],
   }));
 
+  const sourceLabel = alert.source === 'manual' ? t.alerts.source.manual : alert.source;
+
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -103,19 +100,12 @@ export function AlertCard({ alert, onPress }: AlertCardProps) {
             </ThemedText>
             <View style={[styles.sourceBadge, { backgroundColor: theme.backgroundSecondary }]}>
               <ThemedText type="caption">
-                {alert.source === 'manual' ? t.alerts.source.manual : t.alerts.source.system}
+                {sourceLabel}
               </ThemedText>
             </View>
           </View>
-          <AlertStatusIndicator alert={alert} colors={colors} theme={theme} t={t} />
+          <AlertStatusIndicator alert={alert} colors={colors} t={t} />
         </View>
-        {alert.imageUri ? (
-          <Image
-            source={{ uri: alert.imageUri }}
-            style={styles.thumbnail}
-            contentFit="cover"
-          />
-        ) : null}
       </View>
     </AnimatedPressable>
   );
@@ -168,10 +158,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
     alignSelf: 'flex-start',
-  },
-  thumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.sm,
   },
 });

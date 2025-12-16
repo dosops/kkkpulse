@@ -12,7 +12,7 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { StatusChip } from "@/components/StatusChip";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { Incident } from "@/lib/store";
+import { Incident } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/utils";
 
 interface IncidentCardProps {
@@ -30,6 +30,8 @@ export function IncidentCard({ incident, onPress }: IncidentCardProps) {
     transform: [{ scale: scale.value }],
   }));
 
+  const priorityLabel = incident.priority.charAt(0).toUpperCase() + incident.priority.slice(1);
+
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -43,7 +45,7 @@ export function IncidentCard({ incident, onPress }: IncidentCardProps) {
     >
       <View style={styles.header}>
         <ThemedText type="h4" style={{ color: theme.textSecondary }}>
-          {incident.id}
+          {incident.id.slice(0, 8)}
         </ThemedText>
         <StatusChip status={incident.status} />
       </View>
@@ -56,22 +58,12 @@ export function IncidentCard({ incident, onPress }: IncidentCardProps) {
         <SeverityBadge severity={incident.severity} compact />
         <View style={[styles.priorityBadge, { backgroundColor: theme.backgroundSecondary }]}>
           <ThemedText type="caption" style={{ fontWeight: '600' }}>
-            {incident.priority}
+            {priorityLabel}
           </ThemedText>
         </View>
       </View>
 
       <View style={styles.footer}>
-        {incident.assigneeName ? (
-          <View style={styles.assignee}>
-            <View style={[styles.avatar, { backgroundColor: theme.backgroundSecondary }]}>
-              <Feather name="user" size={12} color={theme.textSecondary} />
-            </View>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {incident.assigneeName}
-            </ThemedText>
-          </View>
-        ) : null}
         <ThemedText type="caption" style={{ color: theme.textSecondary }}>
           {formatRelativeTime(incident.updatedAt)}
         </ThemedText>
@@ -109,17 +101,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.sm,
-  },
-  assignee: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

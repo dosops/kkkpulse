@@ -4,10 +4,9 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { AlertStatus, IncidentStatus } from "@/lib/store";
 
 interface StatusChipProps {
-  status: AlertStatus | IncidentStatus;
+  status: string;
   compact?: boolean;
 }
 
@@ -18,12 +17,19 @@ export function StatusChip({ status, compact = false }: StatusChipProps) {
   const config: Record<string, { color: string; label: string }> = {
     new: { color: colors.info, label: 'New' },
     open: { color: colors.info, label: 'Open' },
+    acknowledged: { color: colors.primary, label: 'Acknowledged' },
     in_progress: { color: colors.warning, label: 'In Progress' },
+    investigating: { color: colors.warning, label: 'Investigating' },
+    identified: { color: colors.warning, label: 'Identified' },
+    monitoring: { color: colors.primary, label: 'Monitoring' },
     resolved: { color: colors.success, label: 'Resolved' },
     closed: { color: colors.secondary, label: 'Closed' },
   };
 
-  const { color, label } = config[status] ?? { color: colors.secondary, label: status };
+  const { color, label } = config[status] ?? { 
+    color: colors.secondary, 
+    label: status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') 
+  };
 
   return (
     <View style={[styles.chip, { backgroundColor: color + '20' }]}>

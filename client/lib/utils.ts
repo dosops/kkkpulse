@@ -1,6 +1,7 @@
-export function formatRelativeTime(date: Date): string {
+export function formatRelativeTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const diffMs = now.getTime() - d.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);
   const diffHours = Math.floor(diffMinutes / 60);
@@ -17,24 +18,25 @@ export function formatRelativeTime(date: Date): string {
   } else if (diffDays < 7) {
     return `${diffDays} days ago`;
   } else {
-    return date.toLocaleDateString();
+    return d.toLocaleDateString();
   }
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (isSameDay(date, today)) {
+  if (isSameDay(d, today)) {
     return 'Today';
-  } else if (isSameDay(date, yesterday)) {
+  } else if (isSameDay(d, yesterday)) {
     return 'Yesterday';
   } else {
-    return date.toLocaleDateString('en-US', {
+    return d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+      year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
     });
   }
 }

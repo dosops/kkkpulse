@@ -17,15 +17,14 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError(t.auth.fillAllFields);
       return;
     }
@@ -35,8 +34,8 @@ export default function LoginScreen() {
 
     try {
       const result = mode === 'login'
-        ? await login(username.trim(), password)
-        : await register(username.trim(), password, displayName.trim() || undefined, email.trim() || undefined);
+        ? await login(email.trim(), password)
+        : await register(email.trim(), password, displayName.trim() || undefined);
       
       if (!result.success) {
         setError(result.error || t.auth.authError);
@@ -73,44 +72,30 @@ export default function LoginScreen() {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.label}>{t.auth.username}</ThemedText>
+            <ThemedText style={styles.label}>{t.auth.email}</ThemedText>
             <TextInput
               style={[styles.input, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
-              value={username}
-              onChangeText={setUsername}
-              placeholder={t.auth.usernamePlaceholder}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={t.auth.emailPlaceholder}
               placeholderTextColor={theme.textSecondary}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
           </View>
 
           {mode === 'register' ? (
-            <>
-              <View style={styles.inputContainer}>
-                <ThemedText style={styles.label}>{t.auth.displayName}</ThemedText>
-                <TextInput
-                  style={[styles.input, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
-                  value={displayName}
-                  onChangeText={setDisplayName}
-                  placeholder={t.auth.displayNamePlaceholder}
-                  placeholderTextColor={theme.textSecondary}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <ThemedText style={styles.label}>{t.auth.email}</ThemedText>
-                <TextInput
-                  style={[styles.input, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder={t.auth.emailPlaceholder}
-                  placeholderTextColor={theme.textSecondary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
-            </>
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.label}>{t.auth.displayName}</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.backgroundSecondary, color: theme.text }]}
+                value={displayName}
+                onChangeText={setDisplayName}
+                placeholder={t.auth.displayNamePlaceholder}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
           ) : null}
 
           <View style={styles.inputContainer}>
@@ -150,6 +135,14 @@ export default function LoginScreen() {
               {mode === 'login' ? t.auth.noAccount : t.auth.hasAccount}
             </ThemedText>
           </Pressable>
+
+          {mode === 'login' ? (
+            <View style={styles.demoCredentials}>
+              <ThemedText style={styles.demoTitle}>Demo accounts:</ThemedText>
+              <ThemedText style={styles.demoText}>admin@alerthub.com / password123</ThemedText>
+              <ThemedText style={styles.demoText}>operator@alerthub.com / password123</ThemedText>
+            </View>
+          ) : null}
         </View>
       </KeyboardAwareScrollViewCompat>
     </ThemedView>
@@ -230,5 +223,21 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     ...Typography.small,
+  },
+  demoCredentials: {
+    marginTop: Spacing.lg,
+    padding: Spacing.md,
+    backgroundColor: 'rgba(128, 128, 128, 0.1)',
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+  },
+  demoTitle: {
+    ...Typography.small,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+  demoText: {
+    ...Typography.caption,
+    opacity: 0.7,
   },
 });

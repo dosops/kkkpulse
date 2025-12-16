@@ -1,37 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { apiRequest, getApiUrl } from '@/lib/query-client';
+import { getApiUrl } from '@/lib/query-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface User {
   id: string;
-  username: string;
+  email: string;
   displayName: string | null;
-  email: string | null;
   role: string;
+  language?: string;
 }
 
-export interface Organization {
+export interface Project {
   id: string;
   name: string;
   shortName: string | null;
+  webhookKey: string;
   createdAt: string;
 }
 
 interface AuthState {
   user: User | null;
-  organizations: Organization[];
-  currentOrganizationId: string | null;
+  projects: Project[];
+  currentProjectId: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
 
 interface AuthContextType extends AuthState {
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, password: string, displayName?: string, email?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  switchOrganization: (orgId: string) => Promise<void>;
+  switchProject: (projectId: string) => Promise<void>;
   refresh: () => Promise<void>;
-  getCurrentOrganization: () => Organization | null;
+  getCurrentProject: () => Project | null;
+  hasProjects: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -39,8 +41,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
-    organizations: [],
-    currentOrganizationId: null,
+    projects: [],
+    currentProjectId: null,
     isLoading: true,
     isAuthenticated: false,
   });
@@ -55,8 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         setState({
           user: data.user,
-          organizations: data.organizations || [],
-          currentOrganizationId: data.currentOrganizationId,
+          projects: data.projects || [],
+          currentProjectId: data.currentProjectId,
           isLoading: false,
           isAuthenticated: true,
         });
@@ -64,8 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setState({
           user: null,
-          organizations: [],
-          currentOrganizationId: null,
+          projects: [],
+          currentProjectId: null,
           isLoading: false,
           isAuthenticated: false,
         });
@@ -81,13 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await fetch(new URL('/api/auth/login', getApiUrl()).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -95,8 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         setState({
           user: data.user,
-          organizations: data.organizations || [],
-          currentOrganizationId: data.currentOrganizationId,
+          projects: data.projects || [],
+          currentProjectId: data.currentProjectId,
           isLoading: false,
           isAuthenticated: true,
         });
@@ -111,13 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (username: string, password: string, displayName?: string, email?: string) => {
+  const register = useCallback(async (email: string, password: string, displayName?: string) => {
     try {
       const response = await fetch(new URL('/api/auth/register', getApiUrl()).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ username, password, displayName, email }),
+        body: JSON.stringify({ email, password, displayName }),
       });
 
       const data = await response.json();
@@ -125,8 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         setState({
           user: data.user,
-          organizations: [data.organization],
-          currentOrganizationId: data.organization.id,
+          projects: data.projects || [],
+          currentProjectId: data.currentProjectId,
           isLoading: false,
           isAuthenticated: true,
         });
@@ -153,34 +155,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setState({
       user: null,
-      organizations: [],
-      currentOrganizationId: null,
+      projects: [],
+      currentProjectId: null,
       isLoading: false,
       isAuthenticated: false,
     });
     await AsyncStorage.removeItem('isAuthenticated');
   }, []);
 
-  const switchOrganization = useCallback(async (orgId: string) => {
+  const switchProject = useCallback(async (projectId: string) => {
     try {
-      const response = await fetch(new URL('/api/organizations/switch', getApiUrl()).toString(), {
+      const response = await fetch(new URL('/api/auth/switch-project', getApiUrl()).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ organizationId: orgId }),
+        body: JSON.stringify({ projectId }),
       });
 
       if (response.ok) {
-        setState(prev => ({ ...prev, currentOrganizationId: orgId }));
+        setState(prev => ({ ...prev, currentProjectId: projectId }));
       }
     } catch (error) {
-      console.error('Switch organization error:', error);
+      console.error('Switch project error:', error);
     }
   }, []);
 
-  const getCurrentOrganization = useCallback(() => {
-    return state.organizations.find(o => o.id === state.currentOrganizationId) || null;
-  }, [state.organizations, state.currentOrganizationId]);
+  const getCurrentProject = useCallback(() => {
+    return state.projects.find(p => p.id === state.currentProjectId) || null;
+  }, [state.projects, state.currentProjectId]);
+
+  const hasProjects = state.projects.length > 0;
 
   return (
     <AuthContext.Provider
@@ -189,9 +193,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
-        switchOrganization,
+        switchProject,
         refresh,
-        getCurrentOrganization,
+        getCurrentProject,
+        hasProjects,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useSyncExternalStore } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   SectionList,
   RefreshControl,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,21 +19,36 @@ import { ThemedView } from "@/components/ThemedView";
 import { AlertCard } from "@/components/AlertCard";
 import { Spacing, Colors, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { store, Alert, AlertStatus, AlertGroupBy } from "@/lib/store";
+import { useAlerts, Alert, AlertStatus } from "@/lib/api";
 import { AlertsStackParamList } from "@/navigation/AlertsStackNavigator";
 import { useI18n } from "@/lib/i18n";
 
 type FilterStatus = AlertStatus | 'all';
+type AlertGroupBy = 'none' | 'severity' | 'status' | 'time';
 
-function isToday(date: Date): boolean {
+function isToday(dateStr: string): boolean {
+  const date = new Date(dateStr);
   const today = new Date();
   return date.toDateString() === today.toDateString();
 }
 
-function isYesterday(date: Date): boolean {
+function isYesterday(dateStr: string): boolean {
+  const date = new Date(dateStr);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   return date.toDateString() === yesterday.toDateString();
+}
+
+function getSectionTitle(key: string, groupBy: AlertGroupBy, t: any): string {
+  if (groupBy === 'severity') {
+    return t.severity[key] || key;
+  } else if (groupBy === 'status') {
+    return t.alerts[key] || key;
+  } else {
+    if (key === 'today') return t.groupBy.today;
+    if (key === 'yesterday') return t.groupBy.yesterday;
+    return t.groupBy.older;
+  }
 }
 
 export default function AlertsScreen() {
@@ -41,21 +57,11 @@ export default function AlertsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AlertsStackParamList>>();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
-  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>('all');
+  const [groupBy, setGroupBy] = useState<AlertGroupBy>('none');
   const colors = isDark ? Colors.dark : Colors.light;
 
-  const alerts = useSyncExternalStore(
-    store.subscribe,
-    store.getAlerts,
-    store.getAlerts
-  );
-
-  const groupBy = useSyncExternalStore(
-    store.subscribe,
-    store.getAlertGroupBy,
-    store.getAlertGroupBy
-  );
+  const { data: alerts = [], isLoading, refetch, isRefetching } = useAlerts();
 
   const filteredAlerts = filter === 'all' 
     ? alerts 
@@ -86,7 +92,7 @@ export default function AlertsScreen() {
     });
 
     const severityOrder = ['critical', 'high', 'medium', 'low'];
-    const statusOrder = ['new', 'in_progress', 'resolved'];
+    const statusOrder = ['new', 'acknowledged', 'in_progress', 'resolved'];
     const timeOrder = ['today', 'yesterday', 'older'];
     
     let order: string[];
@@ -102,17 +108,12 @@ export default function AlertsScreen() {
       }));
   }, [filteredAlerts, groupBy, t]);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
-  }, []);
-
   const handleAlertPress = (alert: Alert) => {
     navigation.navigate('AlertDetail', { alertId: alert.id });
   };
 
   const handleGroupByChange = (newGroupBy: AlertGroupBy) => {
-    store.setAlertGroupBy(newGroupBy);
+    setGroupBy(newGroupBy);
   };
 
   const filters: { label: string; value: FilterStatus }[] = [
@@ -129,210 +130,177 @@ export default function AlertsScreen() {
     { label: t.groupBy.time, value: 'time' },
   ];
 
-  const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <Feather name="bell-off" size={48} color={theme.textSecondary} />
-      <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
-        {t.alerts.noAlerts}
-      </ThemedText>
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.filterRow}>
+        {filters.map(f => (
+          <Pressable
+            key={f.value}
+            style={[
+              styles.filterChip,
+              { backgroundColor: filter === f.value ? colors.primary : theme.backgroundSecondary }
+            ]}
+            onPress={() => setFilter(f.value)}
+          >
+            <ThemedText
+              type="small"
+              style={{ color: filter === f.value ? '#fff' : theme.text }}
+            >
+              {f.label}
+            </ThemedText>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.groupByRow}>
+        <ThemedText type="caption" style={{ color: theme.textSecondary, marginRight: Spacing.sm }}>
+          {t.groupBy.label}:
+        </ThemedText>
+        {groupByOptions.map(opt => (
+          <Pressable
+            key={opt.value}
+            style={[
+              styles.groupChip,
+              { 
+                backgroundColor: groupBy === opt.value ? colors.primary + '20' : 'transparent',
+                borderColor: groupBy === opt.value ? colors.primary : theme.border,
+              }
+            ]}
+            onPress={() => handleGroupByChange(opt.value)}
+          >
+            <ThemedText
+              type="caption"
+              style={{ color: groupBy === opt.value ? colors.primary : theme.textSecondary }}
+            >
+              {opt.label}
+            </ThemedText>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 
-  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-    <View style={[styles.sectionHeader, { backgroundColor: theme.backgroundDefault }]}>
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        {section.title}
-      </ThemedText>
-    </View>
-  );
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
+    );
+  }
+
+  if (groupBy !== 'none' && groupedSections) {
+    return (
+      <ThemedView style={styles.container}>
+        <SectionList
+          sections={groupedSections}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          renderSectionHeader={({ section }) => (
+            <View style={[styles.sectionHeader, { backgroundColor: theme.backgroundRoot }]}>
+              <ThemedText type="small" style={{ color: theme.textSecondary, fontWeight: '600' }}>
+                {section.title} ({section.data.length})
+              </ThemedText>
+            </View>
+          )}
+          renderItem={({ item }) => (
+            <AlertCard alert={item} onPress={() => handleAlertPress(item)} />
+          )}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingTop: headerHeight + Spacing.sm, paddingBottom: tabBarHeight + Spacing.xl },
+          ]}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          }
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.controlsContainer, { paddingTop: headerHeight + Spacing.sm }]}>
-        <View style={styles.filterContainer}>
-          {filters.map((f) => (
-            <Pressable
-              key={f.value}
-              onPress={() => setFilter(f.value)}
-              style={[
-                styles.filterChip,
-                {
-                  backgroundColor: filter === f.value
-                    ? colors.primary
-                    : theme.backgroundSecondary,
-                },
-              ]}
-            >
-              <ThemedText
-                type="small"
-                style={[
-                  styles.filterText,
-                  { color: filter === f.value ? '#FFFFFF' : theme.text },
-                ]}
-              >
-                {f.label}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
-        <View style={styles.groupByContainer}>
-          <ThemedText type="caption" style={[styles.groupByLabel, { color: theme.textSecondary }]}>
-            {t.groupBy.label}:
-          </ThemedText>
-          {groupByOptions.map((g) => (
-            <Pressable
-              key={g.value}
-              onPress={() => handleGroupByChange(g.value)}
-              style={[
-                styles.groupByChip,
-                {
-                  backgroundColor: groupBy === g.value
-                    ? colors.primary + '20'
-                    : 'transparent',
-                  borderColor: groupBy === g.value ? colors.primary : theme.backgroundTertiary,
-                },
-              ]}
-            >
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.groupByText,
-                  { color: groupBy === g.value ? colors.primary : theme.textSecondary },
-                ]}
-              >
-                {g.label}
-              </ThemedText>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      {groupBy === 'none' ? (
-        <FlatList
-          data={filteredAlerts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <AlertCard alert={item} onPress={() => handleAlertPress(item)} />
-          )}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingBottom: tabBarHeight + Spacing.xl + 80 },
-          ]}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={renderEmptyComponent}
-        />
-      ) : (
-        <SectionList
-          sections={groupedSections || []}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <AlertCard alert={item} onPress={() => handleAlertPress(item)} />
-          )}
-          renderSectionHeader={renderSectionHeader}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingBottom: tabBarHeight + Spacing.xl + 80 },
-          ]}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={renderEmptyComponent}
-          stickySectionHeadersEnabled={false}
-        />
-      )}
+      <FlatList
+        data={filteredAlerts}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        renderItem={({ item }) => (
+          <AlertCard alert={item} onPress={() => handleAlertPress(item)} />
+        )}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingTop: headerHeight + Spacing.sm, paddingBottom: tabBarHeight + Spacing.xl },
+        ]}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Feather name="bell-off" size={48} color={theme.textSecondary} />
+            <ThemedText type="body" style={[styles.emptyText, { color: theme.textSecondary }]}>
+              {t.alerts.noAlerts}
+            </ThemedText>
+          </View>
+        }
+      />
     </ThemedView>
   );
-}
-
-function getSectionTitle(key: string, groupBy: AlertGroupBy, t: any): string {
-  if (groupBy === 'severity') {
-    const severityMap: Record<string, string> = {
-      critical: t.severity.critical,
-      high: t.severity.high,
-      medium: t.severity.medium,
-      low: t.severity.low,
-    };
-    return severityMap[key] || key;
-  }
-  if (groupBy === 'status') {
-    const statusMap: Record<string, string> = {
-      new: t.alerts.new,
-      in_progress: t.alerts.inProgress,
-      resolved: t.alerts.resolved,
-    };
-    return statusMap[key] || key;
-  }
-  const timeMap: Record<string, string> = {
-    today: t.groupBy.today,
-    yesterday: t.groupBy.yesterday,
-    older: t.groupBy.older,
-  };
-  return timeMap[key] || key;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  controlsContainer: {
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.sm,
     gap: Spacing.sm,
   },
-  filterContainer: {
+  filterRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+    flexWrap: 'wrap',
   },
   filterChip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
-    borderRadius: 16,
+    borderRadius: BorderRadius.full,
   },
-  filterText: {
-    fontWeight: '500',
-  },
-  groupByContainer: {
+  groupByRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
     flexWrap: 'wrap',
+    gap: Spacing.xs,
   },
-  groupByLabel: {
-    marginRight: Spacing.xs,
-  },
-  groupByChip: {
+  groupChip: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs - 2,
+    paddingVertical: 4,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
   },
-  groupByText: {
-    fontWeight: '500',
-  },
   listContent: {
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  sectionHeader: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   separator: {
     height: Spacing.sm,
   },
-  sectionHeader: {
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.xs,
-  },
-  sectionTitle: {
-    fontWeight: '600',
-  },
   emptyContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 100,
+    paddingVertical: Spacing['3xl'],
+    gap: Spacing.md,
   },
   emptyText: {
-    marginTop: Spacing.md,
+    textAlign: 'center',
   },
 });
