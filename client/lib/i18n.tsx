@@ -205,6 +205,25 @@ const translations = {
       yesterday: 'Yesterday',
       older: 'Older',
     },
+    auth: {
+      loginSubtitle: 'Sign in to manage alerts',
+      registerSubtitle: 'Create an account to get started',
+      username: 'Username',
+      usernamePlaceholder: 'Enter username',
+      displayName: 'Display Name',
+      displayNamePlaceholder: 'Your name',
+      email: 'Email',
+      emailPlaceholder: 'your@email.com',
+      password: 'Password',
+      passwordPlaceholder: 'Enter password',
+      login: 'Sign In',
+      register: 'Create Account',
+      noAccount: 'No account? Create one',
+      hasAccount: 'Already have an account? Sign in',
+      fillAllFields: 'Please fill in all required fields',
+      authError: 'Authentication failed',
+      networkError: 'Network error. Please try again.',
+    },
   },
   ru: {
     tabs: {
@@ -407,8 +426,27 @@ const translations = {
       yesterday: 'Вчера',
       older: 'Ранее',
     },
+    auth: {
+      loginSubtitle: 'Войдите для управления алертами',
+      registerSubtitle: 'Создайте аккаунт для начала работы',
+      username: 'Имя пользователя',
+      usernamePlaceholder: 'Введите имя пользователя',
+      displayName: 'Отображаемое имя',
+      displayNamePlaceholder: 'Ваше имя',
+      email: 'Email',
+      emailPlaceholder: 'ваш@email.com',
+      password: 'Пароль',
+      passwordPlaceholder: 'Введите пароль',
+      login: 'Войти',
+      register: 'Создать аккаунт',
+      noAccount: 'Нет аккаунта? Создайте',
+      hasAccount: 'Уже есть аккаунт? Войдите',
+      fillAllFields: 'Заполните все обязательные поля',
+      authError: 'Ошибка аутентификации',
+      networkError: 'Ошибка сети. Попробуйте снова.',
+    },
   },
-};
+} as const;
 
 type Translations = typeof translations.en;
 

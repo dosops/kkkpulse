@@ -17,24 +17,24 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { store } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 
 export default function ProfileScreen() {
   const { theme, isDark } = useTheme();
   const { language, setLanguage, t } = useI18n();
+  const { user, logout } = useAuth();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
 
-  const user = store.getCurrentUser();
   const colors = isDark ? Colors.dark : Colors.light;
 
   const handleLogout = () => {
     Alert.alert(t.profile.logOut, t.profile.logOutConfirm, [
       { text: t.common.cancel, style: 'cancel' },
-      { text: t.profile.logOut, style: 'destructive', onPress: () => {} },
+      { text: t.profile.logOut, style: 'destructive', onPress: () => logout() },
     ]);
   };
 
@@ -79,9 +79,9 @@ export default function ProfileScreen() {
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
             <Feather name="user" size={32} color="#FFFFFF" />
           </View>
-          <ThemedText type="h3">{user.name}</ThemedText>
+          <ThemedText type="h3">{user?.displayName || user?.username || 'User'}</ThemedText>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {user.email}
+            {user?.email || user?.username}
           </ThemedText>
         </View>
 
