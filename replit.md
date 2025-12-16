@@ -69,7 +69,7 @@ server/
 npm run all:dev
 ```
 
-This starts both the Expo development server (port 8081) and the Express server (port 6000).
+This starts both the Expo development server (port 8081) and the Express server (port 5000).
 
 ### Testing
 - Web: Visit the web preview

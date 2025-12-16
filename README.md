@@ -68,7 +68,7 @@ docker-compose up
 ```
 
 This will start:
-- The application on ports 6000 (API) and 8081 (Expo)
+- The application on ports 5000 (API) and 8081 (Expo)
 - PostgreSQL database on port 5432
 
 To stop the application:
@@ -94,7 +94,7 @@ npm run all:dev
 
 This command runs:
 - Expo development server on port 8081
-- Express API server on port 6000
+- Express API server on port 5000
 
 ### Individual Commands
 
