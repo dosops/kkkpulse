@@ -2,7 +2,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { Platform } from "react-native";
 
 /**
- * Gets the base URL for the Express API server (e.g., "http://localhost:5000")
+ * Gets the base URL for the Express API server (e.g., "http://localhost:6000")
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
@@ -17,11 +17,11 @@ export function getApiUrl(): string {
     if (typeof window !== "undefined" && window.location) {
       const protocol = window.location.protocol;
       const hostname = window.location.hostname;
-      return `${protocol}//${hostname}:5000`;
+      return `${protocol}//${hostname}:6000`;
     }
   }
 
-  return "http://localhost:5000";
+  return "http://localhost:6000";
 }
 
 async function throwIfResNotOk(res: Response) {

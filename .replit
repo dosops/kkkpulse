@@ -14,6 +14,10 @@ localPort = 5000
 externalPort = 5000
 
 [[ports]]
+localPort = 6000
+externalPort = 6000
+
+[[ports]]
 localPort = 8081
 externalPort = 80
 
@@ -49,4 +53,9 @@ task = "shell.exec"
 args = "npm run all:dev"
 waitForPort = 8081
 ensurePreviewReachable = "/status"
+
+[userenv]
+
+[userenv.shared]
+PORT = "6000"
 
