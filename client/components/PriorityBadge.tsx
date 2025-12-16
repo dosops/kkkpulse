@@ -4,7 +4,7 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { Priority } from "@/lib/store";
+import { Priority } from "@/lib/api";
 
 interface PriorityBadgeProps {
   priority: Priority;
@@ -15,11 +15,17 @@ export function PriorityBadge({ priority }: PriorityBadgeProps) {
   const colors = isDark ? Colors.dark : Colors.light;
 
   const priorityColors: Record<Priority, string> = {
-    P0: colors.severityCritical,
-    P1: colors.severityHigh,
-    P2: colors.severityMedium,
-    P3: colors.info,
-    P4: colors.secondary,
+    critical: colors.severityCritical,
+    high: colors.severityHigh,
+    medium: colors.severityMedium,
+    low: colors.severityLow,
+  };
+
+  const priorityLabels: Record<Priority, string> = {
+    critical: 'P0',
+    high: 'P1',
+    medium: 'P2',
+    low: 'P3',
   };
 
   const color = priorityColors[priority];
@@ -27,7 +33,7 @@ export function PriorityBadge({ priority }: PriorityBadgeProps) {
   return (
     <View style={[styles.badge, { backgroundColor: color + '20' }]}>
       <ThemedText type="caption" style={[styles.label, { color }]}>
-        {priority}
+        {priorityLabels[priority]}
       </ThemedText>
     </View>
   );

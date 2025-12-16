@@ -6,11 +6,18 @@ import { ThemedText } from "@/components/ThemedText";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { useI18n } from "@/lib/i18n";
-import { Comment } from "@/lib/store";
 import { formatRelativeTime } from "@/lib/utils";
 
+interface DisplayComment {
+  id: number | string;
+  userId: number | string;
+  userName: string;
+  text: string;
+  createdAt: Date | string;
+}
+
 interface CommentsSectionProps {
-  comments: Comment[];
+  comments: DisplayComment[];
   onAddComment: (text: string) => void;
 }
 

@@ -5,7 +5,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { Spacing, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { Severity } from "@/lib/store";
+import { Severity } from "@/lib/api";
 
 interface SeverityBadgeProps {
   severity: Severity;

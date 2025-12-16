@@ -3,13 +3,14 @@ import { View, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing, Colors } from "@/constants/theme";
+import { Spacing, Colors, BorderRadius } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { OrganizationSelector } from "@/components/OrganizationSelector";
+import { useAuth } from "@/lib/auth";
 
 export function HeaderTitle() {
-  const { isDark } = useTheme();
+  const { isDark, theme } = useTheme();
   const colors = isDark ? Colors.dark : Colors.light;
+  const { project } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -19,7 +20,13 @@ export function HeaderTitle() {
         </View>
         <ThemedText type="h4">AlertHub</ThemedText>
       </View>
-      <OrganizationSelector />
+      {project ? (
+        <View style={[styles.projectBadge, { backgroundColor: theme.backgroundSecondary }]}>
+          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            {project.name}
+          </ThemedText>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -41,5 +48,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  projectBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
   },
 });

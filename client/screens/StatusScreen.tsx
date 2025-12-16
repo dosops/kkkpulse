@@ -1,8 +1,10 @@
-import React, { useSyncExternalStore } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -12,33 +14,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { store } from "@/lib/store";
+import { useStatus } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-
-function formatDowntime(minutes: number, t: ReturnType<typeof useI18n>['t']) {
-  if (minutes === 0) {
-    return t.status.noDowntime;
-  }
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  if (hours > 0 && remainingMinutes > 0) {
-    return `${hours}${t.status.hours} ${remainingMinutes}${t.status.minutes}`;
-  }
-  if (hours > 0) {
-    return `${hours}${t.status.hours}`;
-  }
-  return `${remainingMinutes}${t.status.minutes}`;
-}
-
-function getSystemStatus(openCount: number, availabilityPercent: number): 'operational' | 'degraded' | 'majorOutage' {
-  if (openCount === 0 && availabilityPercent >= 99.9) {
-    return 'operational';
-  }
-  if (availabilityPercent >= 95) {
-    return 'degraded';
-  }
-  return 'majorOutage';
-}
 
 export default function StatusScreen() {
   const { theme, isDark } = useTheme();
@@ -46,26 +23,33 @@ export default function StatusScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { t } = useI18n();
 
-  const metrics = useSyncExternalStore(
-    store.subscribe,
-    store.getStatusMetrics,
-    store.getStatusMetrics
-  );
+  const { data: status, isLoading, refetch, isRefetching } = useStatus();
 
   const colors = isDark ? Colors.dark : Colors.light;
-  const systemStatus = getSystemStatus(metrics.openIncidentsCount, metrics.availabilityPercent);
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     operational: '#22C55E',
     degraded: '#F59E0B',
-    majorOutage: '#EF4444',
+    outage: '#EF4444',
   };
 
-  const statusLabels = {
+  const statusLabels: Record<string, string> = {
     operational: t.status.operational,
     degraded: t.status.degraded,
-    majorOutage: t.status.majorOutage,
+    outage: t.status.majorOutage,
   };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
+    );
+  }
+
+  const currentStatus = status?.currentStatus || 'operational';
+  const activeIncidents = status?.activeIncidents || 0;
+  const timeline = status?.timeline || [];
 
   return (
     <ThemedView style={styles.container}>
@@ -78,12 +62,15 @@ export default function StatusScreen() {
             paddingBottom: tabBarHeight + Spacing.xl,
           },
         ]}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
       >
         <View style={[styles.statusCard, { backgroundColor: theme.backgroundDefault }]}>
-          <View style={[styles.statusIndicator, { backgroundColor: statusColors[systemStatus] + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusColors[systemStatus] }]} />
-            <ThemedText type="h3" style={{ color: statusColors[systemStatus] }}>
-              {statusLabels[systemStatus]}
+          <View style={[styles.statusIndicator, { backgroundColor: statusColors[currentStatus] + '20' }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusColors[currentStatus] }]} />
+            <ThemedText type="h3" style={{ color: statusColors[currentStatus] }}>
+              {statusLabels[currentStatus] || currentStatus}
             </ThemedText>
           </View>
           <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center', marginTop: Spacing.xs }}>
@@ -91,47 +78,12 @@ export default function StatusScreen() {
           </ThemedText>
         </View>
 
-        <View style={[styles.metricsCard, { backgroundColor: theme.backgroundDefault }]}>
-          <View style={styles.availabilityRow}>
-            <ThemedText type="h4">{t.status.availability}</ThemedText>
-            <ThemedText type="h1" style={{ color: colors.primary }}>
-              {metrics.availabilityPercent.toFixed(2)}%
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={[styles.metricsCard, { backgroundColor: theme.backgroundDefault }]}>
-          <View style={styles.metricRow}>
-            <View style={[styles.metricIcon, { backgroundColor: colors.severityCritical + '20' }]}>
-              <Feather name="clock" size={20} color={colors.severityCritical} />
-            </View>
-            <View style={styles.metricContent}>
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                {t.status.totalDowntime}
-              </ThemedText>
-              <ThemedText type="h3">
-                {formatDowntime(metrics.totalDowntimeMinutes, t)}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
-              <Feather name="file-text" size={24} color={colors.primary} />
+            <View style={[styles.statIcon, { backgroundColor: colors.severityCritical + '20' }]}>
+              <Feather name="alert-circle" size={24} color={colors.severityCritical} />
             </View>
-            <ThemedText type="h2">{metrics.totalIncidents}</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center' }}>
-              {t.status.totalIncidents}
-            </ThemedText>
-          </View>
-
-          <View style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.warning + '20' }]}>
-              <Feather name="alert-circle" size={24} color={colors.warning} />
-            </View>
-            <ThemedText type="h2">{metrics.openIncidentsCount}</ThemedText>
+            <ThemedText type="h2">{activeIncidents}</ThemedText>
             <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center' }}>
               {t.status.openIncidents}
             </ThemedText>
@@ -141,10 +93,47 @@ export default function StatusScreen() {
             <View style={[styles.statIcon, { backgroundColor: colors.success + '20' }]}>
               <Feather name="check-circle" size={24} color={colors.success} />
             </View>
-            <ThemedText type="h2">{metrics.resolvedIncidentsCount}</ThemedText>
+            <ThemedText type="h2">{timeline.filter(d => d.status === 'operational').length}</ThemedText>
             <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center' }}>
-              {t.status.resolvedIncidents}
+              Days Healthy
             </ThemedText>
+          </View>
+        </View>
+
+        <View style={[styles.timelineCard, { backgroundColor: theme.backgroundDefault }]}>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            {t.status.last30Days}
+          </ThemedText>
+          <View style={styles.timelineGrid}>
+            {timeline.map((day, index) => {
+              const dayColor = statusColors[day.status] || statusColors.operational;
+              return (
+                <View
+                  key={day.date || index}
+                  style={[styles.timelineDay, { backgroundColor: dayColor }]}
+                />
+              );
+            })}
+          </View>
+          <View style={styles.timelineLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: statusColors.operational }]} />
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Operational
+              </ThemedText>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: statusColors.degraded }]} />
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Degraded
+              </ThemedText>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: statusColors.outage }]} />
+              <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                Outage
+              </ThemedText>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -156,11 +145,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: Spacing.md,
+    padding: Spacing.md,
   },
   statusCard: {
     padding: Spacing.lg,
@@ -173,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.full,
     gap: Spacing.sm,
   },
   statusDot: {
@@ -181,33 +174,10 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
-  metricsCard: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
-  },
-  availabilityRow: {
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  metricRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  metricIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  metricContent: {
-    flex: 1,
-  },
   statsGrid: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
   statCard: {
     flex: 1,
@@ -223,5 +193,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.xs,
+  },
+  timelineCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  sectionTitle: {
+    marginBottom: Spacing.md,
+  },
+  timelineGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
+  timelineDay: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+  },
+  timelineLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.lg,
+    marginTop: Spacing.md,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 });

@@ -1,10 +1,11 @@
-import React, { useState, useSyncExternalStore } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
   TextInput,
   Pressable,
-  Alert,
+  Alert as RNAlert,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,18 +19,15 @@ import { SeveritySelector } from "@/components/SeveritySelector";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { store, Severity, IncidentCategory, Priority } from "@/lib/store";
+import { useAlert, useCreateIncident, Severity, Priority } from "@/lib/api";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useI18n } from "@/lib/i18n";
 
-const categoryValues: IncidentCategory[] = ['hardware', 'software', 'network', 'security', 'other'];
-
 const priorities: { label: string; value: Priority }[] = [
-  { label: 'P0', value: 'P0' },
-  { label: 'P1', value: 'P1' },
-  { label: 'P2', value: 'P2' },
-  { label: 'P3', value: 'P3' },
-  { label: 'P4', value: 'P4' },
+  { label: 'Critical', value: 'critical' },
+  { label: 'High', value: 'high' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'Low', value: 'low' },
 ];
 
 export default function RegisterIncidentScreen() {
@@ -39,49 +37,50 @@ export default function RegisterIncidentScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'RegisterIncident'>>();
   const insets = useSafeAreaInsets();
 
-  const alert = useSyncExternalStore(
-    store.subscribe,
-    () => store.getAlert(route.params.alertId),
-    () => store.getAlert(route.params.alertId)
-  );
+  const { data: alert, isLoading } = useAlert(route.params.alertId);
+  const createIncident = useCreateIncident();
 
-  const [title, setTitle] = useState(alert?.title ?? '');
-  const [severity, setSeverity] = useState<Severity>(alert?.severity ?? 'medium');
-  const [category, setCategory] = useState<IncidentCategory>('software');
-  const [priority, setPriority] = useState<Priority>('P2');
+  const [title, setTitle] = useState('');
+  const [severity, setSeverity] = useState<Severity>('medium');
+  const [priority, setPriority] = useState<Priority>('medium');
   const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const colors = isDark ? Colors.dark : Colors.light;
   const isValid = title.trim().length > 0;
+  const isSubmitting = createIncident.isPending;
+
+  React.useEffect(() => {
+    if (alert && !title) {
+      setTitle(alert.title);
+      setSeverity(alert.severity);
+    }
+  }, [alert]);
 
   const handleSubmit = () => {
     if (!isValid || !alert) return;
 
-    Alert.alert(
+    RNAlert.alert(
       t.create.incident.confirmTitle,
       t.create.incident.confirmMessage,
       [
         { text: t.common.cancel, style: 'cancel' },
         {
           text: t.create.incident.register,
-          onPress: () => {
-            setIsSubmitting(true);
+          onPress: async () => {
+            try {
+              await createIncident.mutateAsync({
+                title: title.trim(),
+                description: notes.trim() || undefined,
+                severity,
+                priority,
+                alertId: alert.id,
+              });
 
-            store.createIncident(alert.id, {
-              title: title.trim(),
-              description: alert.description,
-              severity,
-              status: 'open',
-              category,
-              priority,
-              notes: notes.trim(),
-              customFields: {},
-            });
-
-            setIsSubmitting(false);
-            Alert.alert(t.common.success, t.create.incident.successMessage);
-            navigation.popToTop();
+              RNAlert.alert(t.common.success, t.create.incident.successMessage);
+              navigation.popToTop();
+            } catch (error: any) {
+              RNAlert.alert(t.common.error, error.message || 'Failed to create incident');
+            }
           },
         },
       ]
@@ -109,12 +108,23 @@ export default function RegisterIncidentScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, isValid, isSubmitting, title, severity, category, priority, notes, t]);
+  }, [navigation, isValid, isSubmitting, title, severity, priority, notes, t]);
+
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
+    );
+  }
 
   if (!alert) {
     return (
-      <ThemedView style={styles.container}>
-        <ThemedText>{t.common.alertNotFound}</ThemedText>
+      <ThemedView style={[styles.container, styles.centered]}>
+        <Feather name="alert-circle" size={48} color={theme.textSecondary} />
+        <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+          {t.common.alertNotFound}
+        </ThemedText>
       </ThemedView>
     );
   }
@@ -128,17 +138,17 @@ export default function RegisterIncidentScreen() {
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
       >
-        <View style={[styles.alertReference, { backgroundColor: theme.backgroundDefault }]}>
+        <View style={[styles.alertCard, { backgroundColor: theme.backgroundSecondary }]}>
           <View style={styles.alertHeader}>
-            <Feather name="alert-circle" size={20} color={theme.textSecondary} />
+            <Feather name="alert-triangle" size={20} color={colors.severityHigh} />
             <ThemedText type="small" style={{ color: theme.textSecondary }}>
               {t.create.incident.sourceAlert}
             </ThemedText>
           </View>
-          <ThemedText type="body" style={{ fontWeight: '600' }}>
+          <ThemedText type="body" numberOfLines={2}>
             {alert.title}
           </ThemedText>
-          <SeverityBadge severity={alert.severity} />
+          <SeverityBadge severity={alert.severity} compact />
         </View>
 
         <View style={styles.field}>
@@ -154,7 +164,7 @@ export default function RegisterIncidentScreen() {
                 borderColor: theme.border,
               },
             ]}
-            placeholder={t.create.incident.titleField}
+            placeholder="Incident title"
             placeholderTextColor={theme.textSecondary}
             value={title}
             onChangeText={setTitle}
@@ -170,54 +180,27 @@ export default function RegisterIncidentScreen() {
 
         <View style={styles.field}>
           <ThemedText type="h4" style={styles.label}>
-            {t.create.incident.category}
-          </ThemedText>
-          <View style={styles.optionsRow}>
-            {categoryValues.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => setCategory(c)}
-                style={[
-                  styles.optionChip,
-                  {
-                    backgroundColor: category === c
-                      ? colors.primary
-                      : theme.backgroundSecondary,
-                  },
-                ]}
-              >
-                <ThemedText
-                  type="small"
-                  style={{ color: category === c ? '#FFFFFF' : theme.text }}
-                >
-                  {t.incidents.categories[c]}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <ThemedText type="h4" style={styles.label}>
             {t.create.incident.priority}
           </ThemedText>
-          <View style={styles.optionsRow}>
+          <View style={styles.priorityRow}>
             {priorities.map((p) => (
               <Pressable
                 key={p.value}
                 onPress={() => setPriority(p.value)}
                 style={[
-                  styles.priorityChip,
+                  styles.priorityButton,
                   {
-                    backgroundColor: priority === p.value
-                      ? colors.primary
-                      : theme.backgroundSecondary,
+                    backgroundColor: priority === p.value ? colors.primary + '20' : theme.backgroundSecondary,
+                    borderColor: priority === p.value ? colors.primary : theme.border,
                   },
                 ]}
               >
                 <ThemedText
                   type="small"
-                  style={{ color: priority === p.value ? '#FFFFFF' : theme.text, fontWeight: '600' }}
+                  style={{
+                    color: priority === p.value ? colors.primary : theme.text,
+                    fontWeight: priority === p.value ? '600' : '400',
+                  }}
                 >
                   {p.label}
                 </ThemedText>
@@ -257,13 +240,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: Spacing.md,
   },
-  alertReference: {
+  alertCard: {
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.lg,
@@ -296,20 +283,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
   },
-  optionsRow: {
+  priorityRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: Spacing.sm,
   },
-  optionChip: {
-    paddingHorizontal: Spacing.md,
+  priorityButton: {
+    flex: 1,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-  },
-  priorityChip: {
-    width: 48,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
     alignItems: 'center',
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
   },
 });
